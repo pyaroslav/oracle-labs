@@ -17,25 +17,30 @@ community **Oracle Database Free** image (currently 26ai).
 
 ## Quick start
 ```bash
-./run.sh up        # start Oracle Database Free (first run pulls the image + creates the DB)
-./run.sh setup     # create a small demo schema
-./run.sh drill     # snapshot -> CPU workload -> snapshot -> generate an AWR report
-# ...or:
-./run.sh all       # setup + drill
+./run.sh up         # start Oracle Database Free (first run pulls the image + creates the DB)
+./run.sh setup      # create the demo schema (incl. a ~1.4GB table for the I/O drill)
+./run.sh drill      # CPU-bound: snapshot -> workload -> snapshot -> AWR report (awr-report.txt)
+./run.sh drill-io   # I/O signature: flush + scan a big table -> AWR report (io-report.txt)
+./run.sh drill-ash  # Active Session History report over the recent window (ash-report.txt)
+# ...or everything:
+./run.sh all        # setup + all three drills
 ```
 If port 1521 is busy: `LAB_PORT=1530 ./run.sh up`. Everything runs *inside* the container via
 `docker exec`, so you don't need a local Oracle client.
 
-## What `drill` does
-1. Takes a baseline AWR snapshot.
-2. Runs a deliberately CPU-bound statement twice (~20s) — math over a generated row set the optimizer
-   can't shortcut, so it dominates the report.
-3. Takes a closing snapshot.
-4. Generates an AWR report for exactly that interval, saves it to **`awr-report.txt`**, and prints the
-   sections that matter (header / DB Time, Load Profile, Top Timed Events, Top SQL).
+## What the drills do
+- **`drill` (CPU-bound):** snapshot → a CPU-heavy statement (math over a generated row set the optimizer
+  can't shortcut) → snapshot → AWR report (`awr-report.txt`). You'll see **DB CPU at ~99%** of DB time
+  and the workload at the top of *SQL ordered by CPU Time*.
+- **`drill-io` (I/O signature):** flushes the cache and full-scans a table bigger than the cache, so
+  scans hit disk. The report (`io-report.txt`) shows high **physical reads**, a **direct path read**
+  wait, and **`BIGTAB` as the #1 segment in *Segments by Physical Reads*** — the "what's doing the I/O"
+  trail. (On fast local NVMe the I/O *wait time* stays small; on production storage it dominates.)
+- **`drill-ash` (Active Session History):** runs a short workload, then generates an **ASH report**
+  (`ash-report.txt`) — Top User Events, Top SQL, Top Sessions — the per-second view AWR averages away.
 
-Open `awr-report.txt` and practice the reading method from the post: compute Average Active Sessions,
-read Top Timed Events (you'll see DB CPU on top), then *SQL ordered by CPU Time* (your workload is #1).
+Open the reports and practice the reading method from the post: compute Average Active Sessions, read
+Top Timed Events, then the right *SQL ordered by …* list.
 
 ## Other commands
 ```bash
