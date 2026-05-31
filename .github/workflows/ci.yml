@@ -1,0 +1,36 @@
+name: labs-e2e
+
+# Runs each lab end to end (up + all drills) on its own runner, on every push/PR.
+# Oracle DB init is heavy, so timeouts are generous.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  drills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        lab: [ha, awr]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Environment
+        run: |
+          docker version
+          docker compose version
+          echo "RAM:"; free -h | head -2
+
+      - name: Run ${{ matrix.lab }} lab end to end
+        working-directory: ${{ matrix.lab }}
+        run: |
+          chmod +x run.sh
+          ./run.sh up
+          ./run.sh all
+
+      - name: Database log (on failure)
+        if: failure()
+        run: docker logs ora-${{ matrix.lab }}-lab 2>&1 | tail -120

@@ -1,0 +1,14 @@
+# Secrets — never commit
+.env
+*.env
+
+# Logs / scratch
+*.log
+screenshots/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

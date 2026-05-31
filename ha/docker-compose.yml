@@ -1,0 +1,31 @@
+# Oracle HA concepts lab — zero-login, runs on Oracle Database Free (currently 26ai).
+# No Oracle account needed: `docker compose up -d` pulls a community image from Docker Hub.
+#
+# This lab demonstrates the parts of "RAC vs Data Guard vs Both" you can run on a laptop:
+#   - human-error recovery (Flashback / RMAN point-in-time)
+#   - RMAN backup & restore
+#   - block-corruption detection
+# Real Data Guard switchover/failover needs Enterprise Edition — see ./dataguard/ (opt-in).
+services:
+  oracle:
+    # Regular image (NOT -slim): the slim variant strips RMAN, which drills 2 & 3 need.
+    image: gvenzl/oracle-free:latest
+    container_name: ora-ha-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      # Host port is configurable to avoid clashes (set LAB_PORT, default 1521).
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-data:

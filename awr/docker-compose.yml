@@ -1,0 +1,26 @@
+# Oracle AWR lab — zero-login, runs on Oracle Database Free (currently 26ai).
+# On the Free image, control_management_pack_access = DIAGNOSTIC+TUNING, so AWR/ASH work for
+# learning. (In production on Enterprise Edition, AWR/ASH require the licensed Diagnostics Pack.)
+# Companion to the post "How to Read an AWR Report Without Drowning".
+services:
+  oracle:
+    # Regular image (NOT -slim): we need the full DB, not a trimmed runtime.
+    image: gvenzl/oracle-free:latest
+    container_name: ora-awr-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-awr-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-awr-data:

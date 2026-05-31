@@ -1,0 +1,52 @@
+# OPT-IN: real Data Guard lab on Oracle Database Enterprise Edition.
+#
+# Unlike the zero-login Free lab, Data Guard (managed standby, switchover, failover) is an
+# ENTERPRISE EDITION feature, so this module uses Oracle's EE container image. That image requires
+# an Oracle account:
+#
+#   1) Create a free account at https://container-registry.oracle.com and accept the license for
+#      "Oracle Database Enterprise Edition".
+#   2) docker login container-registry.oracle.com
+#
+# Then bring up two EE databases (primary + standby) on a shared network and follow README.md to
+# build the standby and run the switchover/failover drills.
+#
+#   docker compose -f docker-compose.yml up -d
+#
+# Resource note: two EE instances want ~8–10 GB of Docker engine memory. Give Docker enough RAM.
+services:
+  primary:
+    image: container-registry.oracle.com/database/enterprise:latest
+    container_name: dg-primary
+    hostname: dg-primary
+    environment:
+      ORACLE_SID: ORCLCDB
+      ORACLE_PDB: ORCLPDB1
+      ORACLE_PWD: Lab_Passw0rd1
+    ports:
+      - "${PRIMARY_PORT:-1611}:1521"
+    volumes:
+      - dg-primary-data:/opt/oracle/oradata
+    networks: [dgnet]
+
+  standby:
+    image: container-registry.oracle.com/database/enterprise:latest
+    container_name: dg-standby
+    hostname: dg-standby
+    # The standby is created from the primary (RMAN duplicate), so we don't let the image build its
+    # own database here — see README.md step 3 for the create-standby procedure.
+    environment:
+      ORACLE_SID: ORCLCDB
+      ORACLE_PWD: Lab_Passw0rd1
+    ports:
+      - "${STANDBY_PORT:-1612}:1521"
+    volumes:
+      - dg-standby-data:/opt/oracle/oradata
+    networks: [dgnet]
+
+networks:
+  dgnet:
+
+volumes:
+  dg-primary-data:
+  dg-standby-data:
