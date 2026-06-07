@@ -1,0 +1,38 @@
+################################################################################
+# SCENARIO 01 — labcluster, 2 nodes (node1, node2). node2 left the cluster.
+# SYNTHETIC logs for teaching — not captured from a real system.
+# Read top-to-bottom. Questions are in ../../exercises.md.
+################################################################################
+
+===================== GI alert log (node1 — the survivor) ======================
+2026-06-06 03:14:08.412 [OCSSD(8123)] CRS-1612: Network communication with node node2 (2) missing
+  for 50% of timeout interval. Removal of this node from cluster in 14.480 seconds
+2026-06-06 03:14:15.660 [OCSSD(8123)] CRS-1611: Network communication with node node2 (2) missing
+  for 75% of timeout interval. Removal of this node from cluster in 7.250 seconds
+2026-06-06 03:14:20.910 [OCSSD(8123)] CRS-1610: Network communication with node node2 (2) missing
+  for 90% of timeout interval. Removal of this node from cluster in 2.900 seconds
+2026-06-06 03:14:23.808 [OCSSD(8123)] CRS-1607: Node node2 is being evicted in cluster incarnation
+  486201044; details at (:CSSNM00007:) in ocssd.trc.
+2026-06-06 03:14:25.140 [OCSSD(8123)] CRS-1601: CSSD Reconfiguration complete. Active nodes are
+  node1 .
+# (node1's voting-disk access and CPU were normal throughout.)
+
+========================= ocssd.trc (node1 — survivor) =========================
+2026-06-06 03:14:08.410 : CSSD:clssnmPollingThread: node node2 (2) at 50% heartbeat fatal, removal
+  in 14.480 seconds, seedhbimpd 1
+2026-06-06 03:14:20.905 : CSSD:clssnmPollingThread: node node2 (2) at 90% heartbeat fatal, removal
+  in 2.900 seconds, seedhbimpd 1
+2026-06-06 03:14:23.800 : CSSD:clssnmCheckDskInfo: node(2) is down. rcfg(486201044) wrtcnt(...)
+  LATS ... Disk lastSeqNo(...)   <-- node2 still writing its VOTING DISK heartbeat fine
+2026-06-06 03:14:23.806 : CSSD:clssnmrFenceSage: Fenced node node2 (2), handle ...
+2026-06-06 03:14:25.139 : CSSD:clssnmDoSyncUpdate: Terminating node 2, node2, misstime(30000)
+  state(5)   <-- network misscount (30s) exhausted, NOT disktimeout
+
+=========== OSWatcher: private interconnect NIC on node2 (eth1) ================
+# `netstat -i` style samples, ~5s apart, around the eviction window
+Iface   MTU   RX-OK     RX-ERR  RX-DRP   TX-OK     TX-ERR  TX-DRP
+eth1    9000  41880233  0       12       50221190  0       0       <- 03:13:55 baseline
+eth1    9000  41880233  0       9981     50221190  0       0       <- 03:14:05 drops climbing
+eth1    9000  41880233  0       38104    50221190  0       0       <- 03:14:18 RX-DRP storm
+# ifconfig eth1 (node2) at 03:14:30:  "eth1: link down"  then link up at 03:15:02
+# Note: MTU 9000 (jumbo) on eth1; the access switch port was logged flapping at 03:14:0x.

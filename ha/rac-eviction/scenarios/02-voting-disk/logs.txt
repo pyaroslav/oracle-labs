@@ -1,0 +1,36 @@
+################################################################################
+# SCENARIO 02 — labcluster, 2 nodes. 3 voting files on ASM diskgroup +CRSDG.
+# node2 left the cluster. SYNTHETIC logs for teaching.
+################################################################################
+
+========================= GI alert log (node2) =================================
+2026-06-06 22:41:03.220 [OCSSD(7740)] CRS-1615: No I/O has completed after 50% of the maximum
+  interval. Voting file +CRSDG/labcluster/voting/vfile2 will be considered not functional in 99870
+  milliseconds
+2026-06-06 22:42:42.118 [OCSSD(7740)] CRS-1614: No I/O has completed after 75% of the maximum
+  interval. Voting file +CRSDG/.../vfile2 will be considered not functional in 49900 milliseconds
+2026-06-06 22:43:32.061 [OCSSD(7740)] CRS-1613: No I/O has completed after 90% of the maximum
+  interval. Voting file +CRSDG/.../vfile2 will be considered not functional in 19940 milliseconds
+2026-06-06 22:43:52.005 [OCSSD(7740)] CRS-1604: CSSD voting file is offline:
+  +CRSDG/labcluster/voting/vfile2; details at (:CSSNM00058:) in ocssd.trc.
+2026-06-06 22:43:52.460 [OCSSD(7740)] CRS-1606: The number of voting files available, 1, is less
+  than the minimum number of voting files required, 2, resulting in CSSD termination to ensure data
+  integrity; details at (:CSSNM00018:) in ocssd.trc
+# node2's CSSD aborts itself here. node1 (which still saw 2 of 3 voting files) survived.
+
+========================= ocssd.trc (node2) ====================================
+2026-06-06 22:41:03.219 : CSSD:clssnmvDiskPingMonitorThread: voting device 1 (+CRSDG/.../vfile2)
+  has not been ping'd in 50100 ms, max 199800
+2026-06-06 22:43:52.003 : CSSD:clssnmvDiskAvailabilityChange: voting file +CRSDG/.../vfile2 now
+  OFFLINE
+2026-06-06 22:43:52.455 : CSSD:clssnmvVerifyCommittedConfigVF: Insufficient voting files found, 1
+  of 3, needed 2
+2026-06-06 22:43:52.690 : CSSD:clssscExit: CSSD aborting from thread clssnmvDiskPingMonitorThread
+# Network heartbeat to node1 was HEALTHY the whole time (no clssnmPollingThread fatals).
+
+================= OS: /var/log/messages (node2) ================================
+Jun  6 22:40:58 node2 multipathd[1192]: mpathb: sdc - path offline
+Jun  6 22:41:02 node2 multipathd[1192]: mpathb: remaining active paths: 0
+Jun  6 22:41:02 node2 kernel: sd 3:0:0:2: rejecting I/O to offline device
+Jun  6 22:43:51 node2 kernel: blk_update_request: I/O error, dev dm-7 (ASM disk CRS_0002)
+# The LUN backing voting file vfile2 lost ALL multipath paths. ASM disk went offline.

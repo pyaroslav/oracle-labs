@@ -1,0 +1,34 @@
+################################################################################
+# SCENARIO 03 — labcluster, 2 nodes. node2 rebooted. SYNTHETIC logs for teaching.
+# Careful: the survivor's log LOOKS like a network problem. Read all the sources.
+################################################################################
+
+===================== GI alert log (node1 — survivor) ==========================
+2026-06-06 14:02:11.330 [OCSSD(8123)] CRS-1612: Network communication with node node2 (2) missing
+  for 50% of timeout interval. Removal of this node from cluster in 14.500 seconds
+2026-06-06 14:02:23.880 [OCSSD(8123)] CRS-1607: Node node2 is being evicted in cluster incarnation
+  486201051; details at (:CSSNM00007:) in ocssd.trc.
+2026-06-06 14:02:25.010 [OCSSD(8123)] CRS-1601: CSSD Reconfiguration complete. Active nodes are node1 .
+# From node1's view this is identical to a network failure. It is NOT. See node2's local guardians.
+
+============== cssdagent / cssdmonitor log (node2 — the evicted node) ===========
+2026-06-06 14:01:54.700 : CSSD:clsdmc: OCSSD has not responded / has missed checkin for 21.300
+  seconds; threshold 27.000
+2026-06-06 14:02:08.910 : CSSD:clssnmvSchedDiskThreads: KillBlock / scheduling latency detected:
+  ocssd main thread last scheduled 26.8s ago (expected <= 1s)
+2026-06-06 14:02:22.450 : CRS-8011: reboot advisory message from host: node2, component: cssagent,
+  with time stamp: ... ; Rebooting node to ensure cluster integrity (local OCSSD not schedulable)
+# ocssd was ALIVE but couldn't get CPU to send heartbeats -> looked "missing" to node1.
+
+============= CHM / OSWatcher: node2 resource state (1s samples) ================
+#  time      load1   %cpu_idle  runq   memfree_MB  swap_used_%   top process
+14:01:40     188.4   0          241    142          71           java(pid 30771)  RSS 58.9G
+14:01:55     241.7   0          333    38           96           java(pid 30771)  RSS 61.2G  <- swapping hard
+14:02:10     270.1   0          402    11           99           java(pid 30771)  <- node thrashing
+# vmstat: 'b' (uninterruptible) procs > 300; si/so (swap in/out) pinned. CPU 100% busy, 0% idle.
+# A runaway non-database process consumed all CPU + memory and starved ocssd off the run queue.
+
+===================== OS: /var/log/messages (node2) ============================
+Jun  6 14:01:50 node2 kernel: Out of memory: Killed process 30922 (oracle_ckpt) ...
+Jun  6 14:02:22 node2 kernel: Kernel panic - not syncing: cssdagent reboot (cluster integrity)
+# Network NICs reported NO errors/drops this whole window (eth1 clean).

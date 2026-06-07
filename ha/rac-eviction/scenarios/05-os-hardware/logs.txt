@@ -1,0 +1,31 @@
+################################################################################
+# SCENARIO 05 — labcluster, 2 nodes. node2 vanished and rebooted at ~01:47.
+# SYNTHETIC logs for teaching. This one is a trap — read the GI logs carefully.
+################################################################################
+
+===================== GI alert log (node1 — survivor) ==========================
+2026-06-06 01:47:06.310 [OCSSD(8123)] CRS-1607: Node node2 is being evicted in cluster incarnation
+  486201070; details at (:CSSNM00007:) in ocssd.trc.
+2026-06-06 01:47:07.880 [OCSSD(8123)] CRS-1601: CSSD Reconfiguration complete. Active nodes are node1 .
+# NOTE: there are NO preceding CRS-1610/1611/1612 (network) or CRS-1604/1606 (voting) warnings.
+# node2 did not "miss" anything gradually — it was simply GONE in an instant, then reconfig happened.
+
+========================= ocssd.trc (node1 — survivor) =========================
+2026-06-06 01:47:06.300 : CSSD:clssnmvDiskPingMonitorThread: node2 (2) last LATS at 01:47:05.9, no
+  further updates — node disappeared between one heartbeat and the next (no decay curve)
+2026-06-06 01:47:06.305 : CSSD:clssnmCheckDskInfo: node(2) wrtcnt stale; evicting to complete reconfig
+
+==================== node2: GI alert log AFTER it came back =====================
+2026-06-06 01:53:41.002 [OHASD(4410)] CRS-8500: Oracle Clusterware OHASD process is starting ...
+2026-06-06 01:54:55.770 [OCSSD(8980)] CRS-1605: CSSD voting file is online: +CRSDG/.../vfile0; ...
+2026-06-06 01:55:20.114 [OCSSD(8980)] CRS-1601: CSSD Reconfiguration complete. Active nodes are
+  node1 node2 .
+# node2 rejoined cleanly with NO complaint about why it left. GI itself logged no eviction *cause*.
+
+===================== OS: /var/log/messages (node2) ============================
+# Big gap in the log here — nothing between 01:46:58 and the post-boot 01:51:xx lines.
+Jun  6 01:46:58 node2 kernel: mce: [Hardware Error]: CPU 6: Machine Check: 0 Bank 4: be00000000800400
+Jun  6 01:46:58 node2 kernel: mce: [Hardware Error]: TSC 0 ADDR 1f3a40 MISC ...
+Jun  6 01:51:09 node2 kernel: Linux version 5.15.0-... (boot)    <-- fresh boot, abrupt power loss before
+Jun  6 01:51:12 node2 systemd-fsck: /dev/mapper/root: recovering journal (unclean shutdown)
+# ILOM/IPMI system event log (node2):  01:46:59  "Uncorrectable ECC memory error - DIMM B2; CPU reset"

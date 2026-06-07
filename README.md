@@ -12,8 +12,10 @@ machine with nothing but Docker. No Oracle account, no license.
 | --- | --- | --- |
 | [`ha/`](ha/) | Human-error recovery (Flashback), RMAN backup/restore, and block-corruption drills. Plus an opt-in Enterprise Edition [Data Guard module](ha/dataguard/). | *The Oracle HA Decision Tree: RAC vs Data Guard vs Both* |
 | [`awr/`](awr/) | Generate a real AWR report from a known workload and read it. | *How to Read an AWR Report Without Drowning* |
+| [`ha/rac-eviction/`](ha/rac-eviction/) | **No Docker** — diagnose 5 realistic RAC node-eviction scenarios from their logs (interconnect, voting disk, starvation, time drift, and one that isn't an eviction at all). | *RAC Node Eviction: A Troubleshooting Checklist That Starts With Why* |
 
-Each lab is verified end-to-end in CI.
+Each Docker lab is verified end-to-end in CI. The `rac-eviction` lab is a self-contained, text-only
+forensics exercise (just bash) — run `./grade.sh` to self-check.
 
 ## Quick start
 
@@ -32,7 +34,9 @@ Always Free VM.
 RAC (shared storage + cluster interconnect) and Data Guard (managed standby) are Enterprise Edition
 capabilities that don't run on the zero-login Free image — so the labs focus on what you *can* reproduce
 on a laptop. The opt-in [`ha/dataguard/`](ha/dataguard/) module documents a real Data Guard setup for
-when you have EE access.
+when you have EE access. And while you can't spin up a real cluster on a laptop, you *can* practice the
+skill that matters when one breaks — diagnosing a node eviction from the logs — in the no-Docker
+[`ha/rac-eviction/`](ha/rac-eviction/) forensics lab.
 
 ## Disclaimer
 

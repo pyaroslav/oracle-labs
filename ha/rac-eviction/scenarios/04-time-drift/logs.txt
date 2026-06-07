@@ -1,0 +1,31 @@
+################################################################################
+# SCENARIO 04 — labcluster, 2 nodes. Intermittent reconfigurations; one eviction.
+# SYNTHETIC logs for teaching. NTP/chrony was reconfigured on node2 that morning.
+################################################################################
+
+========================= GI alert log (node1) =================================
+2026-06-06 09:12:33.500 [OCTSSD(6610)] CRS-2409: The clock on host node2 is not synchronous with the
+  mean cluster time. No action has been taken as the Cluster Time Synchronization Service is running
+  in observer mode.
+2026-06-06 09:18:02.140 [OCTSSD(6610)] CRS-2409: The clock on host node2 is not synchronous with the
+  mean cluster time. No action has been taken ... (observer mode)
+2026-06-06 09:31:47.900 [OCSSD(8123)] CRS-1612: Network communication with node node2 (2) missing
+  for 50% of timeout interval. Removal of this node from cluster in 14.500 seconds
+2026-06-06 09:32:01.220 [OCSSD(8123)] CRS-1607: Node node2 is being evicted in cluster incarnation
+  486201066; details at (:CSSNM00007:) in ocssd.trc.
+
+========================= octssd.trc / ocssd.trc (node2) ========================
+2026-06-06 09:12:33.498 : CTSS:clsctss_check_cb: large time offset detected vs cluster mean:
+  +6.842000 seconds (host node2). ctssd in OBSERVER mode (external time sync configured).
+2026-06-06 09:31:33.010 : CSSD:clssnmHandleSync: sync(486201066) received; local LATS jumped
+  backward ~7s relative to peer — heartbeat accounting disrupted
+2026-06-06 09:31:47.880 : CSSD:clssnmPollingThread: node node2 (2) at 50% heartbeat fatal (time
+  accounting anomaly), removal in 14.500 seconds
+
+===================== OS: /var/log/messages (node2) ============================
+Jun  6 08:55:10 node2 systemd[1]: Stopped chronyd.service
+Jun  6 09:05:44 node2 systemd[1]: Started chronyd.service
+Jun  6 09:12:33 node2 chronyd[2207]: System clock wrong by 6.842113 seconds, adjustment started
+Jun  6 09:31:32 node2 chronyd[2207]: System clock wrong by -7.004551 seconds, STEP applied
+# A chrony restart let the clock STEP (not slew) by several seconds while CSS was running.
+# eth1 NIC: clean (no drops). Voting files: all 3 online throughout.

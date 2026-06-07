@@ -17,6 +17,8 @@ required. It runs on the community **Oracle Database Free** image from Docker Hu
 > - **Block-corruption detection & recovery**
 >
 > For real Data Guard switchover/failover, see the opt-in EE module in [`./dataguard/`](./dataguard/).
+> To practice diagnosing a **RAC node eviction** from its logs (no cluster required), see the no-Docker
+> [`./rac-eviction/`](./rac-eviction/) forensics lab.
 
 ## Prerequisites
 
