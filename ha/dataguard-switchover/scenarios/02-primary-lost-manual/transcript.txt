@@ -1,0 +1,46 @@
+################################################################################
+# SCENARIO 02 — 03:10, pager fires. The prod_pri host is unreachable (hardware).
+# SYNTHETIC DGMGRL output.
+################################################################################
+
+DGMGRL> SHOW CONFIGURATION;
+
+Configuration - labdg
+
+  Protection Mode: MaxAvailability
+  Members:
+  prod_pri - Primary database
+    Warning: ORA-16778: redo transport error for one or more members
+    prod_sby - (*) Physical standby database
+
+Fast-Start Failover:  DISABLED
+
+Configuration Status:
+ERROR   (status updated 6 seconds ago)
+
+DGMGRL> SHOW DATABASE 'prod_pri';
+
+Database - prod_pri
+  Role:               PRIMARY
+  Intended State:     TRANSPORT-ON
+  Instance(s):        prodpri1
+Error:
+  ORA-12543: TNS:destination host unreachable
+
+Database Status:
+DGM-17016: failed to retrieve status for database "prod_pri"
+
+DGMGRL> SHOW DATABASE 'prod_sby';
+
+Database - prod_sby
+  Role:               PHYSICAL STANDBY
+  Intended State:     APPLY-ON
+  Transport Lag:      (unknown)
+  Apply Lag:          0 seconds (computed just before primary loss)
+  Instance(s):        prodsby1
+Database Status:
+SUCCESS
+
+# Server team confirms prod_pri host is DOWN (failed motherboard) — not coming back tonight.
+# Fast-Start Failover is DISABLED, so nothing has promoted the standby automatically.
+# Protection mode is MaxAvailability (SYNC); the standby was synchronized at the last good status.

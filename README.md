@@ -13,9 +13,10 @@ machine with nothing but Docker. No Oracle account, no license.
 | [`ha/`](ha/) | Human-error recovery (Flashback), RMAN backup/restore, and block-corruption drills. Plus an opt-in Enterprise Edition [Data Guard module](ha/dataguard/). | *The Oracle HA Decision Tree: RAC vs Data Guard vs Both* |
 | [`awr/`](awr/) | Generate a real AWR report from a known workload and read it. | *How to Read an AWR Report Without Drowning* |
 | [`ha/rac-eviction/`](ha/rac-eviction/) | **No Docker** — diagnose 5 realistic RAC node-eviction scenarios from their logs (interconnect, voting disk, starvation, time drift, and one that isn't an eviction at all). | *RAC Node Eviction: A Troubleshooting Checklist That Starts With Why* |
+| [`ha/dataguard-switchover/`](ha/dataguard-switchover/) | **No Docker** — read 5 Data Guard Broker situations and decide switchover vs failover, the data loss, and the old-primary aftermath. | *Data Guard Switchover vs Failover: Which Role Transition, and When* |
 
-Each Docker lab is verified end-to-end in CI. The `rac-eviction` lab is a self-contained, text-only
-forensics exercise (just bash) — run `./grade.sh` to self-check.
+Each Docker lab is verified end-to-end in CI. The `rac-eviction` and `dataguard-switchover` labs are
+self-contained, text-only forensics exercises (just bash) — run `./grade.sh` to self-check.
 
 ## Quick start
 

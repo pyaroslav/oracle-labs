@@ -1,0 +1,32 @@
+################################################################################
+# SCENARIO 05 — Planned maintenance. You tried a switchover and it REFUSED.
+# The primary is perfectly healthy. SYNTHETIC output.
+################################################################################
+
+DGMGRL> SHOW DATABASE 'prod_sby';
+
+Database - prod_sby
+  Role:               PHYSICAL STANDBY
+  Intended State:     APPLY-ON
+  Transport Lag:      0 seconds (computed 2 seconds ago)
+  Apply Lag:          11 minutes 40 seconds (computed 2 seconds ago)
+  Average Apply Rate: 1.20 MByte/s
+  Instance(s):        prodsby1
+    Warning: ORA-16853: apply lag has exceeded specified threshold
+
+Database Status:
+WARNING
+
+DGMGRL> SWITCHOVER TO 'prod_sby';
+
+Performing switchover NOW, please wait...
+Error: ORA-16470: Redo Apply is not applying redo fast enough; standby has not
+       applied all received redo
+
+Unable to switchover, primary database is still "prod_pri"
+Failed.
+
+# Transport Lag is 0 (redo IS arriving), but Apply Lag is 11m40s and the apply rate is low —
+# the standby has received the redo but hasn't APPLIED it all yet.
+# The primary (prod_pri) is healthy and untouched; the switchover simply did not happen.
+# (A related variant you may see instead: ORA-16775, "target standby database has a redo gap".)

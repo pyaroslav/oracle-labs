@@ -1,0 +1,34 @@
+################################################################################
+# SCENARIO 04 — The primary just died. Before you failover, the question everyone
+# on the bridge is asking: how much data did we lose? SYNTHETIC output.
+################################################################################
+
+DGMGRL> SHOW CONFIGURATION;
+
+Configuration - labdg
+
+  Protection Mode: MaxPerformance
+  Members:
+  prod_pri - Primary database
+    prod_sby - (*) Physical standby database
+
+Fast-Start Failover:  DISABLED
+
+Configuration Status:
+ERROR   (status updated 4 seconds ago)
+
+# Last good status of the standby, captured ~20s before the primary was lost:
+DGMGRL> SHOW DATABASE 'prod_sby';
+
+Database - prod_sby
+  Role:               PHYSICAL STANDBY
+  Intended State:     APPLY-ON
+  Transport Lag:      14 seconds
+  Apply Lag:          22 seconds
+  Average Apply Rate: 3.10 MByte/s
+  Instance(s):        prodsby1
+Database Status:
+SUCCESS
+
+# Protection mode is MaxPerformance (ASYNC redo transport).
+# Transport Lag was 14s and Apply Lag was 22s at the last measurement before the primary died.

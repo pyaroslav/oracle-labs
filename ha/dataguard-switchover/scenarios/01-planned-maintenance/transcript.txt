@@ -1,0 +1,43 @@
+################################################################################
+# SCENARIO 01 — You must patch the OS on the prod_pri host tonight.
+# SYNTHETIC DGMGRL (Data Guard Broker) output — not from a real system.
+################################################################################
+
+DGMGRL> SHOW CONFIGURATION;
+
+Configuration - labdg
+
+  Protection Mode: MaxAvailability
+  Members:
+  prod_pri - Primary database
+    prod_sby - (*) Physical standby database
+
+Fast-Start Failover:  DISABLED
+
+Configuration Status:
+SUCCESS   (status updated 18 seconds ago)
+
+DGMGRL> SHOW DATABASE 'prod_pri';
+
+Database - prod_pri
+  Role:               PRIMARY
+  Intended State:     TRANSPORT-ON
+  Instance(s):        prodpri1
+Database Status:
+SUCCESS
+
+DGMGRL> SHOW DATABASE 'prod_sby';
+
+Database - prod_sby
+  Role:               PHYSICAL STANDBY
+  Intended State:     APPLY-ON
+  Transport Lag:      0 seconds (computed 1 second ago)
+  Apply Lag:          0 seconds (computed 1 second ago)
+  Average Apply Rate: 4.80 MByte/s
+  Real Time Query:    ON
+  Instance(s):        prodsby1
+Database Status:
+SUCCESS
+
+# Both databases healthy. Configuration SUCCESS. Standby fully synchronized (0/0 lag).
+# The primary host just needs an OS patch + reboot; the database itself is fine.

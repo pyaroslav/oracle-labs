@@ -1,0 +1,41 @@
+################################################################################
+# SCENARIO 03 — You log in at 03:25 AFTER an incident at 03:11. SYNTHETIC output.
+# Read carefully: who is the primary now?
+################################################################################
+
+DGMGRL> SHOW CONFIGURATION;
+
+Configuration - labdg
+
+  Protection Mode: MaxAvailability
+  Members:
+  prod_sby - Primary database
+    Warning: ORA-16817: unsynchronized fast-start failover configuration
+    prod_pri - Physical standby database (disabled)
+      ORA-16661: the standby database needs to be reinstated
+
+Fast-Start Failover:  ENABLED
+
+Configuration Status:
+WARNING   (status updated 9 seconds ago)
+
+DGMGRL> SHOW FAST_START FAILOVER;
+
+Fast-Start Failover: ENABLED
+
+  Threshold:          30 seconds
+  Target:             prod_pri
+  Observer:           obs-host3
+  Lag Limit:          0 seconds (zero data loss)
+  Shutdown Primary:   TRUE
+  Auto-reinstate:     TRUE
+
+Configurable Failover Conditions
+  Health Conditions:
+    Corrupted Controlfile          YES
+    Datafile Write Errors          YES
+    Inaccessible Logfile            NO
+
+# NOTE: prod_sby is now the PRIMARY. The Observer (obs-host3) detected the primary loss and failed
+# over automatically at 03:11. The old primary, prod_pri, is back online but marked "needs to be
+# reinstated" — its timeline diverged from the new primary at failover.
