@@ -22,6 +22,14 @@ docker compose up -d           # starts dg-primary (and an empty dg-standby shel
 
 Give the Docker engine ~8–10 GB RAM (Docker Desktop → Resources → Memory).
 
+> **Heads-up on the standby container.** The EE image auto-creates a fresh `ORCLCDB` on
+> `dg-standby`'s empty volume on first boot — you don't want that database, because the standby is
+> built *from the primary* in step 2. Once the container is up, stop that instance, remove its
+> spfile and control/data files, and restart it `NOMOUNT` from a minimal pfile
+> (`DB_NAME=ORCLCDB`, `DB_UNIQUE_NAME=ORCLCDB_STBY`) — that NOMOUNT shell is what step 2's RMAN
+> auxiliary connects to. (Alternatively, override the `standby` service's startup command to skip
+> DB creation entirely.) The `DUPLICATE … FOR STANDBY` in step 2 then lays down the real standby.
+
 ## 1. Prepare the primary (on `dg-primary`)
 
 ```bash
