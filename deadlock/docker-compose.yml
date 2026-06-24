@@ -1,0 +1,26 @@
+# Oracle deadlock lab — zero-login, runs on Oracle Database Free (currently 26ai).
+# Companion to the post on ORA-00060. Induces a real TX-enqueue deadlock between two sessions and
+# prints the "Deadlock graph" straight from the diagnostic trace — no Diagnostics Pack, no adrci.
+services:
+  oracle:
+    # A deadlock needs no buffer cache, so the -slim image also works; the regular image keeps
+    # parity with the other labs. Diag paths are identical either way.
+    image: gvenzl/oracle-free:latest
+    container_name: ora-deadlock-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-deadlock-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-deadlock-data:
