@@ -1,5 +1,7 @@
 # Oracle AWR Lab (zero-login)
 
+> 📖 **Companion post:** [How to Read an AWR Report Without Drowning](https://uptimearchitect.com/blog/how-to-read-an-awr-report/)
+
 Generate a **real AWR report** on your own machine and read it alongside the post
 **"How to Read an AWR Report Without Drowning."** No Oracle account, no license — it runs on the
 community **Oracle Database Free** image (currently 26ai).

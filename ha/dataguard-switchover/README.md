@@ -1,5 +1,7 @@
 # Data Guard Switchover vs Failover Forensics Lab (zero-install)
 
+> 📖 **Companion post:** [Data Guard Switchover vs Failover](https://uptimearchitect.com/blog/oracle-data-guard-switchover-vs-failover/)
+
 Practice the decision that matters in a Data Guard incident: **switchover or failover — and what to do
 about the old primary afterward.** This is the hands-on companion to the post
 **"Data Guard Switchover vs Failover: Which Role Transition, and When."**

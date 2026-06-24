@@ -1,5 +1,7 @@
 # Real Data Guard Lab (Enterprise Edition — opt-in)
 
+> 📖 **Companion post:** [Data Guard Switchover vs Failover](https://uptimearchitect.com/blog/oracle-data-guard-switchover-vs-failover/)
+
 This module stands up a genuine **primary + physical standby** so you can run the **switchover**,
 **failover**, and **monitoring** drills from the post against real Data Guard. It needs Enterprise
 Edition, which means an Oracle account.

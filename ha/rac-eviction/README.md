@@ -1,5 +1,7 @@
 # Oracle RAC Node-Eviction Forensics Lab (zero-install)
 
+> 📖 **Companion post:** [RAC Node Eviction: A Troubleshooting Checklist](https://uptimearchitect.com/blog/oracle-rac-node-eviction-troubleshooting/)
+
 Practice the skill that actually matters when a RAC node disappears: **reading the logs and naming the
 cause.** This is the hands-on companion to the post
 **"RAC Node Eviction: A Troubleshooting Checklist That Starts With Why."**

@@ -1,5 +1,7 @@
 # Oracle Wait-Events Lab (zero-login)
 
+> 📖 **Companion post:** [Oracle Wait Events, Decoded](https://uptimearchitect.com/blog/oracle-wait-events-decoded/)
+
 Induce the wait events that carry real performance problems — on your own machine — and read each
 one's signature in `v$session_event`, alongside the post **"Oracle Wait Events, Decoded."** No Oracle
 account, no license: it runs on the community **Oracle Database Free** image (currently 26ai).
