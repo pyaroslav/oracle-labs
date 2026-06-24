@@ -20,7 +20,7 @@ Same endian (Linux→Linux), same version (19c→19c), Enterprise Edition, `ARCH
 
 ## 03 — Into Autonomous Database → **Data Pump (logical), via Object Storage**
 
-The junior DBA's RMAN idea is **impossible**: Autonomous has no SYSDBA and no file-system access, so it is **not an RMAN target** — you can't restore a backup or stand up a physical standby into it. The supported path is **logical**: Data Pump with dump files in Object Storage, run as **ADMIN** (never SYS), excluding ADB-managed objects (`cluster,indextype,db_link`). The source is WE8MSWIN1252 but **ADB is fixed at AL32UTF8**, so the character set must converge to Unicode — run the **Cloud Premigration Advisor Tool (CPAT)** first to catch expansion/truncation. (If near-zero downtime were required, you'd reach for GoldenGate instead — still logical.)
+The junior DBA's RMAN idea is **impossible**: Autonomous has no SYSDBA and no file-system access, so it is **not an RMAN target** — you can't restore a backup or stand up a physical standby into it. The supported path is **logical**: Data Pump with dump files in Object Storage, run as **ADMIN** (never SYS), excluding ADB-managed objects (`cluster,indextype,db_link`). The source is WE8MSWIN1252 but **ADB defaults to AL32UTF8 and can't be changed after provisioning**, so the character set must converge to Unicode — run the **Cloud Premigration Advisor Tool (CPAT)** first to catch expansion/truncation. (If near-zero downtime were required, you'd reach for GoldenGate instead — still logical.)
 
 ## 04 — Oracle Database@Azure → **Data Guard physical (ZDM); the colleague is wrong**
 
