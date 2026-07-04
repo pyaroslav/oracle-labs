@@ -12,8 +12,12 @@ machine with nothing but Docker. No Oracle account, no license.
 | --- | --- | --- |
 | [`ha/`](ha/) | Human-error recovery (Flashback), RMAN backup/restore, and block-corruption drills. Plus an opt-in Enterprise Edition [Data Guard module](ha/dataguard/). | *The Oracle HA Decision Tree: RAC vs Data Guard vs Both* |
 | [`awr/`](awr/) | Generate a real AWR report from a known workload and read it. | *How to Read an AWR Report Without Drowning* |
+| [`wait-events/`](wait-events/) | Reproduce the half-dozen wait events that carry most real problems, and read each signature. | *Oracle Wait Events, Decoded: The Half-Dozen* |
+| [`deadlock/`](deadlock/) | Trigger a real ORA-00060 deadlock, read the deadlock graph, then fix it with consistent lock ordering. | *ORA-00060 Deadlock: Find It, Fix It, Prevent It* |
+| [`patching/`](patching/) | **No Docker** — diagnose 6 patch-state situations from their transcripts: the `datapatch` gap, a stale RU, a RAC node mismatch, a `WITH ERRORS` status, and the "apply the RUR" trap. `./grade.sh` self-check. | *Oracle Patching, Demystified: CPU, RU, RUR — and What Changed in 2026* |
 | [`ha/rac-eviction/`](ha/rac-eviction/) | **No Docker** — diagnose 5 realistic RAC node-eviction scenarios from their logs (interconnect, voting disk, starvation, time drift, and one that isn't an eviction at all). | *RAC Node Eviction: A Troubleshooting Checklist That Starts With Why* |
 | [`ha/dataguard-switchover/`](ha/dataguard-switchover/) | **No Docker** — read 5 Data Guard Broker situations and decide switchover vs failover, the data loss, and the old-primary aftermath. | *Data Guard Switchover vs Failover: Which Role Transition, and When* |
+| [`migration-methods/`](migration-methods/) | **No Docker** — pick the right migration method (Data Pump, GoldenGate, Data Guard, ZDM…) across 5 scenarios; `./grade.sh` self-check. | *Migrating Oracle to the Cloud: Which Method, and When* |
 
 Each Docker lab is verified end-to-end in CI. The `rac-eviction` and `dataguard-switchover` labs are
 self-contained, text-only forensics exercises (just bash) — run `./grade.sh` to self-check.
