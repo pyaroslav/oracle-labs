@@ -1,0 +1,26 @@
+# Oracle AI Vector Search lab — zero-login, runs on Oracle Database Free (currently 26ai / 23.x).
+# AI Vector Search (the VECTOR datatype + VECTOR_DISTANCE) is a core Oracle Database 23ai feature and is
+# included in Oracle Database Free — so you can run the vector-search demo from the post here, with NO
+# OCI account. Companion to "Your First Oracle Autonomous Database on OCI Always Free".
+services:
+  oracle:
+    # Regular image (NOT -slim): we need the full 23ai database with the VECTOR feature.
+    image: gvenzl/oracle-free:latest
+    container_name: ora-vector-search-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-vector-search-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-vector-search-data:
