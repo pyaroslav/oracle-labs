@@ -148,7 +148,9 @@ RMAN
   grep -qiE "RMAN-[0-9]|ORA-[0-9]" /tmp/rman-pitr.log && die "point-in-time recovery hit errors (see log)."
   out=$(run_sql <<'SQL'
 set heading off feedback off pagesize 0
-alter pluggable database FREEPDB1 open;
+-- the PDB is usually already open after OPEN RESETLOGS; open it if not, ignore "already open"
+begin execute immediate 'alter pluggable database FREEPDB1 open'; exception when others then null; end;
+/
 alter session set container=FREEPDB1;
 select 'ROWS='||count(*) from orders_demo;
 select 'KEEPER='||count(*) from orders_demo where id = 9999;
