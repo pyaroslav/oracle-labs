@@ -7,7 +7,7 @@ throwaway Oracle database and recover it — for real — on the community **Ora
 No Oracle account, no license, nothing but Docker.
 
 > ✅ **Verified end-to-end in CI** with `./run.sh all`: it enables `ARCHIVELOG`, takes an RMAN backup,
-> then runs three recoveries and **fails the run if any of them don't actually restore the data** — so a
+> then runs four recoveries and **fails the run if any of them don't actually restore the data** — so a
 > green check means the database really was broken and really came back.
 
 ## Prerequisites
@@ -16,11 +16,12 @@ No Oracle account, no license, nothing but Docker.
 ## Quick start
 ```bash
 ./run.sh up               # start Oracle Database Free (first run pulls the image + creates the DB)
-./run.sh all              # setup + all three recoveries end to end
+./run.sh all              # setup + all four recoveries end to end
 # ...or step through them:
 ./run.sh setup            # ARCHIVELOG on, a demo tablespace + 100 rows, and an RMAN backup
 ./run.sh validate         # prove a restore would work — read-only, changes nothing
 ./run.sh drill-datafile   # delete a datafile from disk, then RESTORE + RECOVER it
+./run.sh drill-blocks     # corrupt one on-disk block, then repair it with block media recovery
 ./run.sh drill-pitr       # a bad DELETE, then point-in-time recovery to rewind past it
 ```
 If port 1521 is busy: `LAB_PORT=1530 ./run.sh up`.
@@ -32,6 +33,10 @@ If port 1521 is busy: `LAB_PORT=1530 ./run.sh up`.
 - **`drill-datafile`** — takes the demo datafile offline, **`rm`s it from disk**, then `RESTORE DATAFILE`
   + `RECOVER DATAFILE` and brings it back online. All 100 rows return. This is the single most common
   real recovery: one file, not the whole database.
+- **`drill-blocks`** — writes random bytes into a single on-disk block, **detects** it with `VALIDATE
+  CHECK LOGICAL` (it shows up in `V$DATABASE_BLOCK_CORRUPTION`), then repairs *just that block* with
+  **block media recovery** (`RECOVER DATAFILE n BLOCK m`) — the datafile never goes offline. Fails the
+  drill if the corruption wasn't detected or the block wasn't cleared.
 - **`drill-pitr`** — inserts a "keeper" row, records the SCN, runs a `DELETE` that commits, then does
   database point-in-time recovery (`SET UNTIL SCN` → `RESTORE` → `RECOVER` → `OPEN RESETLOGS`) to rewind
   the database to **just before the delete**. The deleted rows come back. This is your answer to "someone
