@@ -10,11 +10,11 @@ on:
 jobs:
   drills:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        lab: [ha, awr, wait-events, deadlock, vector-search]
+        lab: [ha, awr, wait-events, deadlock, vector-search, rman]
     steps:
       - uses: actions/checkout@v5
 

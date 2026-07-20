@@ -1,0 +1,25 @@
+# Oracle RMAN recovery lab — zero-login, runs on Oracle Database Free (currently 26ai / 23.x).
+# You break a throwaway database and recover it with RMAN: lose a datafile and restore it, rewind past
+# a bad DELETE with point-in-time recovery, and validate that a restore would actually work.
+# Companion to "Oracle RMAN Recovery Runbook: Restore, Recover, Prove It".
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-rman-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-rman-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-rman-data:
