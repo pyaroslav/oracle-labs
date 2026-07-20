@@ -6,8 +6,9 @@
 #   ./run.sh setup          # enable ARCHIVELOG, create a demo tablespace + data, take an RMAN backup
 #   ./run.sh validate       # prove a restore would work: RESTORE DATABASE VALIDATE + PREVIEW (read-only)
 #   ./run.sh drill-datafile # lose a datafile from disk, then RESTORE + RECOVER it, verify the data is back
+#   ./run.sh drill-blocks   # corrupt one on-disk block, then repair it with block media recovery (no full restore)
 #   ./run.sh drill-pitr     # a bad DELETE, then point-in-time recovery (SET UNTIL SCN) to rewind past it
-#   ./run.sh all            # setup + validate + drill-datafile + drill-pitr
+#   ./run.sh all            # setup + validate + drill-datafile + drill-blocks + drill-pitr
 #   ./run.sh sql            # SYSDBA SQL*Plus session inside the container
 #   ./run.sh down           # stop & remove the container (keeps the data volume)
 #   ./run.sh destroy        # stop & remove the container AND the data volume
@@ -163,12 +164,86 @@ SQL
   echo ">> PITR OK — the bad DELETE was undone; the database was rewound to just before it."
 }
 
+cmd_drill_blocks() {
+  wait_healthy
+  echo ">> BLOCK MEDIA RECOVERY DRILL: corrupt one block on disk, recover just that block (datafile stays online)"
+  local FNO BLK BS det
+  FNO=$(run_sql <<'SQL' | grep -oE '[0-9]+' | tail -1
+set heading off feedback off pagesize 0 verify off
+alter session set container=FREEPDB1;
+select dbms_rowid.rowid_to_absolute_fno(rowid,'SYS','ORDERS_DEMO') from sys.orders_demo where rownum=1;
+exit
+SQL
+)
+  BLK=$(run_sql <<'SQL' | grep -oE '[0-9]+' | tail -1
+set heading off feedback off pagesize 0 verify off
+alter session set container=FREEPDB1;
+select dbms_rowid.rowid_block_number(rowid) from sys.orders_demo where rownum=1;
+exit
+SQL
+)
+  BS=$(run_sql <<'SQL' | grep -oE '[0-9]+' | tail -1
+set heading off feedback off pagesize 0
+select value from v$parameter where name='db_block_size';
+exit
+SQL
+)
+  { [ -n "${FNO:-}" ] && [ -n "${BLK:-}" ] && [ -n "${BS:-}" ]; } || die "could not locate the sample block."
+  echo "   A sample row lives in datafile #$FNO, block $BLK (block size $BS)"
+  echo "   -- fresh backup of that datafile (the recovery source for the block)..."
+  run_rman <<RMAN | tee /tmp/rman-blk-backup.log
+backup as compressed backupset datafile $FNO;
+exit
+RMAN
+  grep -qiE "RMAN-[0-9]|ORA-[0-9]" /tmp/rman-blk-backup.log && die "block-drill backup errored."
+  echo "   -- flush cache, then corrupt that block on disk with random bytes (the 'bad storage')..."
+  run_sql <<'SQL'
+alter system flush buffer_cache;
+exit
+SQL
+  docker exec "$C" bash -c "dd if=/dev/urandom of='$DF' bs=$BS seek=$BLK count=1 conv=notrunc status=none"
+  echo "   -- DETECT with RMAN VALIDATE (it exits non-zero when it finds corruption — expected):"
+  run_rman <<RMAN | tee /tmp/rman-blk-detect.log || true
+validate check logical datafile $FNO;
+exit
+RMAN
+  det=$(run_sql <<SQL | grep -oE '[0-9]+' | tail -1
+set heading off feedback off pagesize 0
+select count(*) from v\$database_block_corruption where file# = $FNO;
+exit
+SQL
+)
+  { [ -n "${det:-}" ] && [ "$det" -ge 1 ]; } 2>/dev/null || die "corruption not detected in V\$DATABASE_BLOCK_CORRUPTION — drill did not actually corrupt a block."
+  echo "   Corruption detected: $det block(s) flagged in V\$DATABASE_BLOCK_CORRUPTION"
+  echo "   -- REPAIR with block media recovery (only that block; the datafile never goes offline)..."
+  run_rman <<RMAN | tee /tmp/rman-blk-recover.log
+recover datafile $FNO block $BLK;
+exit
+RMAN
+  grep -qiE "RMAN-[0-9]|ORA-[0-9]" /tmp/rman-blk-recover.log && die "block media recovery errored."
+  grep -qi "media recovery complete" /tmp/rman-blk-recover.log || die "block media recovery did not complete."
+  out=$(run_sql <<'SQL'
+set heading off feedback off pagesize 0
+alter session set container=FREEPDB1;
+select 'ROWS='||count(*) from sys.orders_demo;
+select 'REMAINING_CORRUPT='||count(*) from v$database_block_corruption;
+exit
+SQL
+)
+  echo "$out"
+  echo "$out" | grep -qiE "ORA-[0-9]" && die "table still errors after block recovery: $out"
+  echo "$out" | grep -qE "ROWS=[0-9]+" || die "table unreadable after block recovery."
+  echo "$out" | grep -q "REMAINING_CORRUPT=0" || die "block still flagged corrupt after recovery."
+  echo ">> BLOCK RECOVERY OK — one block corrupted on disk, detected, and recovered without a full restore."
+}
+
 cmd_all() {
   cmd_setup
   echo; cmd_validate
   echo; cmd_drill_datafile
+  echo; cmd_drill_blocks
   echo; cmd_drill_pitr
-  echo; echo ">> ALL RMAN DRILLS PASSED — you broke it four ways and recovered every time."
+  echo; echo ">> ALL RMAN DRILLS PASSED — you broke a real database three ways and recovered every time."
 }
 
 cmd_sql()     { docker exec -it "$C" sqlplus "/ as sysdba"; }
@@ -180,6 +255,7 @@ case "${1:-}" in
   setup) cmd_setup ;;
   validate) cmd_validate ;;
   drill-datafile) cmd_drill_datafile ;;
+  drill-blocks) cmd_drill_blocks ;;
   drill-pitr) cmd_drill_pitr ;;
   all) cmd_all ;;
   sql) cmd_sql ;;
