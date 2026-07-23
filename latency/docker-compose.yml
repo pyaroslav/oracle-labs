@@ -1,0 +1,39 @@
+# Oracle interconnect-latency lab — zero-login, runs on Oracle Database Free (currently 26ai).
+# Companion to the post "OCI vs Oracle Database@Azure: Where Should Your Oracle Database Live?".
+#
+# Two containers on one Docker network:
+#   oracle — the database ("the other cloud")
+#   app    — the application host (same image, DB not started; we only use its sqlplus)
+#
+# The app container gets NET_ADMIN so `tc netem` can inject 2ms / 10ms of network delay on its
+# interface — simulating the same-datacenter vs interconnect vs cross-region app-to-DB path.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-latency-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: labuser
+      APP_USER_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-latency-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+  app:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-latency-app
+    entrypoint: ["sleep", "infinity"]
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - oracle
+
+volumes:
+  ora-latency-data:
