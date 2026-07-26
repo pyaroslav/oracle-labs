@@ -1,0 +1,26 @@
+# Oracle hardening-audit lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "The Oracle Hardening Checklist That Actually Matters".
+#
+# The lab deliberately puts the database into a WEAK state (default-password account, PUBLIC and
+# ANY-privilege grants, DBA on an app account, an open password profile, auditing turned off), scores
+# it with `./run.sh audit`, then `./run.sh harden` fixes it and re-audits to prove every check flips
+# from FAIL to PASS. Everything runs inside the container via `docker exec` — you only need Docker.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-hardening-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-hardening-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-hardening-data:
