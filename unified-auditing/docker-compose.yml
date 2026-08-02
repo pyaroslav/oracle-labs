@@ -1,0 +1,26 @@
+# Oracle unified-auditing lab — one Oracle Database Free container (currently 26ai, unified-only:
+# traditional auditing is desupported from 23ai, which is exactly the world this lab lives in).
+# Companion to the post "Oracle Unified Auditing Without the Noise".
+#
+# The lab enables the baseline policies plus a custom one, TRIGGERS real audited events (a failed
+# login, a CREATE USER, a read of a sensitive table), flushes the audit buffer, and proves each event
+# landed in UNIFIED_AUDIT_TRAIL. Everything runs inside the container via `docker exec` — just Docker.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-unified-auditing-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-unified-auditing-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-unified-auditing-data:
