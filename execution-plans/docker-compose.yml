@@ -1,0 +1,26 @@
+# Oracle execution-plans lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Execution Plans, Decoded: The One Number That Matters".
+#
+# The lab builds a million-row table with a heavily skewed column, gathers stats WITHOUT a histogram,
+# and reads the real execution plan (DBMS_XPLAN 'ALLSTATS LAST'): the optimizer over-estimates the rare
+# value a thousandfold and full-scans. It then gathers a histogram and proves the plan flips to an index
+# range scan with the estimate corrected. Everything runs inside the container via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-execution-plans-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-execution-plans-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-execution-plans-data:
