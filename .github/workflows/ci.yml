@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lab: [ha, awr, wait-events, execution-plans, deadlock, vector-search, rman, latency, hardening, unified-auditing]
+        lab: [ha, awr, wait-events, execution-plans, optimizer-stats, deadlock, vector-search, rman, latency, hardening, unified-auditing]
     steps:
       - uses: actions/checkout@v5
 

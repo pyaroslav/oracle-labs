@@ -1,0 +1,27 @@
+# Oracle optimizer-stats lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Optimizer Statistics, Demystified".
+#
+# The lab builds a million-row table with two PERFECTLY CORRELATED columns (model determines make) and
+# gathers stats WITHOUT a column group. The optimizer, assuming the columns are independent, multiplies
+# their selectivities and under-estimates the row count ~50x, so it picks a nested loop join when tens of
+# thousands of rows match. It then creates an extended statistic on the (make, model) column group and
+# proves the estimate corrects and the plan flips to a hash join. Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-optimizer-stats-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-optimizer-stats-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-optimizer-stats-data:
