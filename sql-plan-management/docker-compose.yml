@@ -1,0 +1,28 @@
+# Oracle SQL Plan Management lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle SQL Plan Management: Stop a Good Plan From Going Bad".
+#
+# The lab builds a million-row ORDERS table with a rare, indexed STATUS and a histogram, so a selective
+# query gets the cheap INDEX plan. It captures that plan as an ACCEPTED SQL plan baseline, then drops the
+# histogram to simulate stats drift — the optimizer now costs a FULL SCAN as cheaper. With SQL plan
+# baselines OFF the plan regresses to that full scan; with them ON the accepted index plan is held (the
+# plan is still reproducible because the index exists) and DBMS_XPLAN shows the baseline was used.
+# Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-sql-plan-management-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-spm-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-spm-data:
