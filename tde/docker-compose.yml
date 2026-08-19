@@ -1,0 +1,28 @@
+# Oracle TDE lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Transparent Data Encryption: Prove the Datafile Is Unreadable".
+#
+# The lab configures a TDE software keystore, creates ONE encrypted tablespace and ONE ordinary one,
+# writes the same recognizable "canary" rows into both, and then reads the datafiles straight off disk.
+# The canary is plainly visible in the unencrypted datafile and absent from the encrypted one — the exact
+# "someone walked off with the .dbf file" threat TDE defends against. It then closes the keystore and shows
+# the encrypted data becomes unreadable to the database itself until the wallet is reopened.
+# Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-tde-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-tde-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-tde-data:
