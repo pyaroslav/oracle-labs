@@ -1,0 +1,27 @@
+# Oracle Flashback lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Flashback: Undo at the Database Level".
+#
+# The lab demonstrates the three Flashback tools that actually save you from human error, hardest-hitting
+# first: FLASHBACK TABLE ... TO SCN to reverse a bad UPDATE, FLASHBACK TABLE ... TO BEFORE DROP to recover a
+# dropped table from the recycle bin, and FLASHBACK DATABASE TO RESTORE POINT to rewind the entire database
+# after a disaster. It enables ARCHIVELOG + a guaranteed restore point so the whole-database rewind is real.
+# Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-flashback-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-flashback-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-flashback-data:
