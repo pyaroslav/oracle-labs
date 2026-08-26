@@ -1,0 +1,29 @@
+# Oracle Data Redaction lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Data Redaction: Mask at Read Time, Prove It Isn't Access Control".
+#
+# The lab builds one table of fake-but-sensitive rows (card, SSN, email, salary), adds DBMS_REDACT
+# policies to it, then reads it back as two different users: an ordinary CLERK who is subject to the
+# policy and sees masked values, and an AUDITOR who holds EXEMPT REDACTION POLICY and sees the real
+# values. It then greps the datafile off disk to show the real data is STILL THERE (redaction is a
+# display-time control, not encryption at rest — the exact opposite of the TDE lab) and shows that a
+# WHERE clause on the true value still finds the row, proving redaction is not access control.
+# Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-data-redaction-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-data-redaction-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-data-redaction-data:
