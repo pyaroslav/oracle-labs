@@ -1,0 +1,27 @@
+# Oracle Partition Pruning lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Partition Pruning: Read One Partition, Not the Whole Table".
+#
+# The lab builds a range-partitioned table (monthly interval partitions) with 1.2M rows, then runs the
+# SAME logical query two ways: once with a range predicate on the partition key (Oracle PRUNES to a single
+# partition) and once with a FUNCTION wrapped around the partition key (pruning is defeated, every partition
+# is scanned). Same row count, radically different work — proven from the real plan and buffer gets.
+# Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-partition-pruning-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-partition-pruning-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-partition-pruning-data:
