@@ -1,0 +1,27 @@
+# Oracle Data Pump lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Data Pump, Done Right: A Migration You Can Prove".
+#
+# The lab creates a schema of known size, exports it with expdp, then proves three things impdp gets right:
+#   ROUNDTRIP : drop the schema and re-import it -> exact same row counts (a lossless round trip).
+#   REMAP     : import into a DIFFERENT schema with REMAP_SCHEMA -> the real migration move.
+#   FILTER    : export just one table with INCLUDE -> a selective dump, re-imported and asserted.
+# Everything runs via `docker exec` (expdp/impdp/sqlplus inside the container) — no host Oracle client.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-data-pump-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-data-pump-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-data-pump-data:
