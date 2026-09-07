@@ -1,0 +1,28 @@
+# Oracle VPD / Row-Level Security lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Virtual Private Database: Row-Level Security You Can't Route Around".
+#
+# The lab builds an ORDERS table split across two regions (1,800 EAST / 1,200 WEST), protects it with a
+# Virtual Private Database (VPD) policy via DBMS_RLS, then reads it back as three different users: REP_EAST
+# and REP_WEST, who each see ONLY their own region's rows, and MGR, who holds EXEMPT ACCESS POLICY and sees
+# every row. The predicate is enforced on counts, on SUM(amount), and on a targeted lookup by id — proving
+# VPD filters the BASE TABLE for every statement, unlike a view you could route around. This is the ROW-level
+# counterpart to the Data Redaction lab's COLUMN masking. Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-vpd-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-vpd-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-vpd-data:
