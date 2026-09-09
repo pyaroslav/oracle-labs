@@ -1,0 +1,26 @@
+# Oracle Privilege Analysis lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Privilege Analysis: You Granted DBA. Here's What They Actually Used."
+#
+# The lab creates a deliberately OVER-privileged user (a role carrying ten system privileges plus two
+# object grants), starts a DBMS_PRIVILEGE_CAPTURE run scoped to that user, runs a tiny real workload as
+# them, then reports which granted privileges were actually USED versus UNUSED — proving the over-grant and
+# handing you the least-privilege regrant. Everything runs via `docker exec`.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-privilege-analysis-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-privilege-analysis-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-privilege-analysis-data:
