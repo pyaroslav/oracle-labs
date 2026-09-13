@@ -1,0 +1,27 @@
+# Oracle Indexes lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Oracle Indexes: When They Help, When They Hurt, and How to Tell".
+#
+# Builds a 1,000,000-row skewed ORDERS table with two indexes and runs five queries with
+# GATHER_PLAN_STATISTICS to prove three things from real plans + buffer gets: a selective index turns a
+# full scan into a cheap index range scan; the SAME low-cardinality index is correctly IGNORED for a
+# common value (a full scan is cheaper) yet USED for a rare value; and forcing that index on the common
+# value reads far MORE than the full scan it replaced — the index actively hurting. Everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-indexes-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-indexes-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-indexes-data:
