@@ -1,0 +1,26 @@
+# Oracle bind-variables lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Bind Variables: The Hard-Parse Storm That Melts Your Shared Pool".
+#
+# Runs ONE logical query 1,000 times two ways and reads the real library-cache cost from V$SQL / V$MYSTAT:
+# with a LITERAL value every iteration is a distinct SQL text -> ~1,000 parent cursors and ~1,000 hard
+# parses (the shared pool thrashes); with a BIND VARIABLE it is a single cursor, one hard parse, and 1,000
+# executions. Proves the difference deterministically (counts, not timings). Everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-bind-variables-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-bind-variables-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-bind-variables-data:
