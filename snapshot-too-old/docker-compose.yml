@@ -1,0 +1,26 @@
+# Oracle snapshot-too-old (ORA-01555) lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "ORA-01555 Snapshot Too Old: Reproduce It, Then Make It Impossible".
+#
+# Reproduces the classic read-consistency failure: a long-running query on a tiny, non-autoextending undo
+# tablespace while heavy DML churns and overwrites the undo the query needs -> ORA-01555. Then applies the
+# fix -- a properly sized undo tablespace with RETENTION GUARANTEE and an undo_retention long enough to cover
+# the query -- and runs the SAME query to completion. Deterministic; everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-snapshot-too-old-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-snapshot-too-old-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-snapshot-too-old-data:
