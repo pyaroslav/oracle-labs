@@ -1,0 +1,28 @@
+# Oracle archiver-stuck (ORA-00257) lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "ORA-00257: The Database Stopped Accepting Writes. The Archiver Is Stuck."
+#
+# Reproduces the classic availability outage: the database is in ARCHIVELOG mode, its archive destination is a
+# small, fixed-size Fast Recovery Area, and nobody backs up + removes the archived logs -- so the FRA fills, the
+# archiver (ARCn) cannot write the next archived redo log, every online redo group ends up full-and-unarchived,
+# and the next session that generates redo gets ORA-00257 ("archiver error. Connect internal only, until
+# freed."). Then applies the real fix -- back up the archived logs to a location OUTSIDE the FRA and delete the
+# inputs (RMAN), reclaiming the space -- and shows the same workload completing. Deterministic; all via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-archiver-stuck-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-archiver-stuck-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-archiver-stuck-data:
