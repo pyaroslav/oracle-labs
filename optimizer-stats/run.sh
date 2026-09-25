@@ -50,9 +50,25 @@ cmd_setup() {
 show_plan() { printf '%s\n' "$1" | awk '/>>>PLAN/{f=1;next} />>>ENDPLAN/{f=0} f'; }
 sig() { printf '%s' "$1" | grep -oE "$2=[0-9]+" | head -1 | cut -d= -f2; }
 
-cmd_before() { echo ">> BEFORE — make & model treated as independent:"; show_plan "$(run_sys < scripts/probe.sql)"; }
+# Run the probe, retrying until the plan signals are present (sets PROBE_OUT). Guards a rare cursor-cache
+# invalidation -- e.g. Oracle's automatic optimizer stats-history partition maintenance purging the cursor
+# just after it runs -- where DBMS_XPLAN.DISPLAY_CURSOR reports "... cannot be found" and the EROWS/AROWS
+# line comes back empty. Each retry re-executes the probe from a fresh session, creating a fresh cursor. $1
+# is a signal key that only appears when the cursor was found (EROWS); the plan is deterministic either way
+# (no column group -> nested loop; column group -> hash join), so re-running is safe.
+probe_until() {
+  local key="$1" i
+  for i in 1 2 3 4; do
+    PROBE_OUT=$(run_sys < scripts/probe.sql) || true
+    printf '%s' "$PROBE_OUT" | grep -qE "${key}=[0-9]" && return 0
+    sleep 2
+  done
+  return 1
+}
+
+cmd_before() { echo ">> BEFORE — make & model treated as independent:"; probe_until EROWS || true; show_plan "$PROBE_OUT"; }
 cmd_fix()    { echo ">> FIX — creating an extended statistic on (make, model)..."; run_sys < scripts/fix.sql >/dev/null; echo ">> Column group gathered."; }
-cmd_after()  { echo ">> AFTER — with the (make, model) column group:"; show_plan "$(run_sys < scripts/probe.sql)"; }
+cmd_after()  { echo ">> AFTER — with the (make, model) column group:"; probe_until EROWS || true; show_plan "$PROBE_OUT"; }
 
 cmd_all() {
   cmd_setup
@@ -60,7 +76,8 @@ cmd_all() {
   echo
   echo ">> BEFORE: no column group -- optimizer multiplies selectivities and under-counts the filter"
   local b bn bE bA ratio
-  b=$(run_sys < scripts/probe.sql)
+  probe_until EROWS || die "could not read the BEFORE plan signals after retries:"$'\n'"${PROBE_OUT:-}"
+  b="$PROBE_OUT"
   show_plan "$b"
   bn=$(sig "$b" HAS_NL); bE=$(sig "$b" EROWS); bA=$(sig "$b" AROWS)
   [ -n "${bn:-}" ] && [ -n "${bE:-}" ] && [ -n "${bA:-}" ] || die "could not read the BEFORE plan signals:"$'\n'"$b"
@@ -77,7 +94,8 @@ cmd_all() {
   echo
   echo ">> AFTER: with the column group, the optimizer knows make & model travel together"
   local a an ah aE aA r2
-  a=$(run_sys < scripts/probe.sql)
+  probe_until EROWS || die "could not read the AFTER plan signals after retries:"$'\n'"${PROBE_OUT:-}"
+  a="$PROBE_OUT"
   show_plan "$a"
   an=$(sig "$a" HAS_NL); ah=$(sig "$a" HAS_HASH); aE=$(sig "$a" EROWS); aA=$(sig "$a" AROWS)
   [ -n "${an:-}" ] && [ -n "${ah:-}" ] && [ -n "${aE:-}" ] && [ -n "${aA:-}" ] || die "could not read the AFTER plan signals:"$'\n'"$a"
