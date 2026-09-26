@@ -1,0 +1,25 @@
+# Oracle character-set migration lab -- one Oracle Database Free container (currently 26ai, AL32UTF8).
+# Companion to the post "The Migration Completed Successfully. Half the Names Are Now Question Marks."
+#
+# Reproduces silent data loss when Unicode (AL32UTF8) data is migrated into a narrower target character set
+# (US7ASCII / WE8MSWIN1252): the load reports success and the row counts match, but characters that the target
+# set cannot represent are replaced with '?', irreversibly. Then shows the pre-migration scan that catches it
+# and the Unicode-target migration that preserves every character. Deterministic; everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-charset-migration-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-charset-migration-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+volumes:
+  ora-charset-migration-data:
