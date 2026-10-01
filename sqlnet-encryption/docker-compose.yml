@@ -1,0 +1,26 @@
+# Oracle SQL*Net plaintext lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Your Oracle Traffic Is Readable on the Wire. Here's the Proof, and the Fix."
+#
+# A client connects over TCP and reads a confidential row while a sidecar (sharing this container's network
+# namespace) captures port 1521 with tcpdump: the SQL text and the result are readable in the capture. Then
+# native network encryption is made REQUIRED in the server's sqlnet.ora and the SAME query is captured again:
+# nothing readable, and V$SESSION_CONNECT_INFO confirms AES256 + SHA256. Deterministic; everything via docker.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-sqlnet-encryption-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-sqlnet-encryption-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-sqlnet-encryption-data:
