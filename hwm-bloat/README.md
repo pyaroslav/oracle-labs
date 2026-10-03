@@ -50,7 +50,7 @@ remaining row survives. (Exact numbers can vary slightly by release; the ratios 
   `MOVE` leaves indexes `UNUSABLE` until rebuilt. `TRUNCATE` resets the HWM instantly but removes every row.
 - **Index scans don't care; full scans do.** A lookup by primary key reads a handful of blocks either way. The
   bloat bites full scans, fast full index scans on equally bloated indexes, and anything that reads "the whole
-  table" — reports, aggregates, statistics gathering, and backups of the space.
+  table" — reports, aggregates, and statistics gathering.
 - **Inserts reuse the free space.** Conventional inserts fill the emptied blocks over time, so bloat matters most
   for tables that were purged and won't grow back. Direct-path (`APPEND`) inserts always go above the HWM and
   never reuse it. Demo data is generic and invented.
