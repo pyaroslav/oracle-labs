@@ -1,0 +1,25 @@
+# Oracle high-water mark (HWM) bloat lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "You Deleted 99% of the Rows. The Full Scan Didn't Get Any Faster."
+#
+# Loads a 200,000-row table, deletes 99% of it, and shows a full scan still reads every block below the
+# high-water mark -- the same work for 1% of the rows. Then SHRINK SPACE lowers the HWM and the same scan
+# reads ~1% of the blocks. Measured with consistent gets from V$MYSTAT. Deterministic; everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-hwm-bloat-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-hwm-bloat-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-hwm-bloat-data:
