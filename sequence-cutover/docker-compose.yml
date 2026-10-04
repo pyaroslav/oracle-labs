@@ -1,0 +1,26 @@
+# Oracle sequence-cutover lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Cutover Went Perfectly. The First New Order Failed With ORA-00001."
+#
+# Migrates a schema the way many cutovers do: an initial Data Pump load (tables + sequences), the source keeps
+# taking orders, then a final DATA-ONLY refresh of the tables at cutover. The sequence on the target is still
+# where the initial load left it, so the first insert on the new system collides with an existing key ->
+# ORA-00001. A check query flags it; ALTER SEQUENCE ... RESTART START WITH fixes it. Everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-sequence-cutover-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-sequence-cutover-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-sequence-cutover-data:
