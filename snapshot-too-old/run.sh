@@ -3,7 +3,7 @@
 # you only need Docker. Companion to "ORA-01555 Snapshot Too Old: Reproduce It, Then Make It Impossible".
 #
 #   REPRODUCE : open a full-scan cursor on a 20,000-row table, pin its read-consistent snapshot, then rewrite
-#               every row 12x and commit -- churning far more undo than the 10 MB, non-autoextending, NOT-
+#               every row 12x and commit -- churning far more undo than the 25 MB, non-autoextending, NOT-
 #               guaranteed undo tablespace can hold. Keep fetching the old snapshot -> the undo it needs has
 #               been overwritten -> ORA-01555. Asserts the failure actually happens.
 #   FIX       : swap in a 300 MB undo tablespace with RETENTION GUARANTEE and undo_retention=1200, then run the
@@ -39,7 +39,7 @@ cmd_up() { docker compose up -d; wait_healthy; }
 
 cmd_setup() {
   wait_healthy
-  echo ">> Building the 20,000-row table and the weak undo config (10 MB, no autoextend, no guarantee)..."
+  echo ">> Building the 20,000-row table and the weak undo config (25 MB, no autoextend, no guarantee)..."
   run_sys < scripts/setup.sql >/dev/null 2>&1 || true
   local m rows undo
   m=$(run_sys < scripts/meta.sql)
