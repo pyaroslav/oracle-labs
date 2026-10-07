@@ -54,7 +54,7 @@ end;
 
 -- ---- proof it bypassed the cache -------------------------------------------
 prompt
-prompt --- Proof: physical reads DIRECT should rise (blocks went to the PGA) ----
+prompt --- Proof: physical reads DIRECT should rise (blocks went to the PGA) ===
 column name  format a26
 column value format 999,999,990
 select sn.name, ms.value
@@ -88,7 +88,7 @@ order  by se.time_waited_micro desc
 fetch  first 8 rows only;
 
 prompt
-prompt --- This drill''s target event, as a BEFORE -> AFTER delta (serial pass) ----
+prompt --- This drill's target event, as a BEFORE -> AFTER delta (serial pass) ===
 column d_waits format 999,999,990
 column d_micro format 999,999,999,990
 select 'direct path read' as event,

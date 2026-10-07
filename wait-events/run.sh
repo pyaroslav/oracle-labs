@@ -8,7 +8,7 @@
 #   ./run.sh drill-seq     # induce 'db file sequential read' -> seq-report.txt
 #   ./run.sh drill-scatter # induce 'db file scattered read'  -> scatter-report.txt
 #   ./run.sh drill-direct  # induce 'direct path read'        -> direct-report.txt
-#   ./run.sh drill-commit  # induce 'log file sync'           -> commit-report.txt
+#   ./run.sh drill-commit  # induce 'log file sync'           -> commit-report.txt (LFS_N=10000 commits)
 #   ./run.sh all           # setup + all four drills
 #   ./run.sh sql           # open a SYSDBA SQL*Plus session inside the container
 #   ./run.sh down          # stop & remove the container (keeps the data volume)
@@ -45,7 +45,30 @@ run_drill() {
 cmd_seq()     { run_drill seq-drill.sql     seq-report.txt     "db file sequential read"; }
 cmd_scatter() { run_drill scatter-drill.sql scatter-report.txt "db file scattered read"; }
 cmd_direct()  { run_drill direct-drill.sql  direct-report.txt  "direct path read"; }
-cmd_commit()  { run_drill commit-drill.sql  commit-report.txt  "log file sync"; }
+# 'log file sync' needs CLIENT-side commits (one call per COMMIT, like a real app committing per
+# row). A COMMIT inside a PL/SQL loop waits only ~once (PL/SQL commit-time optimization), so we
+# generate an N x (INSERT; COMMIT;) script inside the container and the drill runs it via @.
+LFS_N="${LFS_N:-10000}"
+cmd_commit() {
+  local wl=/tmp/lfs-workload.sql
+  seq 1 "$LFS_N" | awk -v q="'" '{ printf "insert into labuser.lfs_demo values (%d, rpad(%sx%s,100,%sx%s));\ncommit;\n", $1, q, q, q, q }' \
+    | docker exec -i "$C" bash -c "cat > $wl"
+  echo ">> DRILL: log file sync"
+  { echo "define lfs_n = $LFS_N"; echo "define lfs_workload = $wl"; cat scripts/commit-drill.sql; } \
+    | run_sql > commit-report.txt 2>&1
+  echo ">> Saved: $(pwd)/commit-report.txt ($(wc -c < commit-report.txt) bytes)"
+  echo "================= WAIT SIGNATURE: log file sync ================="
+  { grep -iE "EVENT|log file sync|log file parallel write|LFS_SIGNAL|Read it|round-trip|PL/SQL|BATCHING|the event" commit-report.txt || true; } | head -30
+  echo "====================================================="
+  # Assert the measured count: at least 90% of the N client commits must show up as LFS waits.
+  local waits
+  waits=$({ grep -oE 'client_waits=[0-9]+' commit-report.txt || true; } | head -1 | cut -d= -f2)
+  if [ -z "$waits" ] || [ "$waits" -lt $(( LFS_N * 9 / 10 )) ]; then
+    echo "FAIL: expected >= $(( LFS_N * 9 / 10 )) 'log file sync' waits for $LFS_N client commits, measured '${waits:-none}'." >&2
+    exit 1
+  fi
+  echo ">> OK: $waits 'log file sync' waits measured for $LFS_N client-side commits."
+}
 
 cmd_all()    { cmd_setup; cmd_seq; cmd_scatter; cmd_direct; cmd_commit; echo ">> ALL DRILLS COMPLETE"; }
 cmd_sql()    { docker exec -it "$C" sqlplus "/ as sysdba"; }

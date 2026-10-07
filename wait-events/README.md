@@ -24,7 +24,7 @@ account, no license: it runs on the community **Oracle Database Free** image (cu
 ./run.sh drill-seq     # 'db file sequential read'  — single-block index/rowid reads
 ./run.sh drill-scatter # 'db file scattered read'   — buffered multi-block full scan
 ./run.sh drill-direct  # 'direct path read'         — large scan bypassing the cache (into PGA)
-./run.sh drill-commit  # 'log file sync'            — a row-by-row commit loop
+./run.sh drill-commit  # 'log file sync'            — 10,000 client-side row-by-row commits
 # ...or everything:
 ./run.sh all           # setup + all four drills
 ```
@@ -43,13 +43,17 @@ If port 1521 is busy: `LAB_PORT=1530 ./run.sh up`. Everything runs *inside* the 
   (`_serial_direct_read=ALWAYS`, plus a `PARALLEL` fallback). `physical reads direct` rises; the cache
   stays cold. (PX-slave reads accrue to the slave sessions, so the current-session delta reflects the
   serial pass.)
-- **`drill-commit` → `log file sync`:** a PL/SQL loop of 50,000 single-row `INSERT` + `COMMIT` forces
-  one synchronous LGWR write+post per commit. The session shows ~50,000 `log file sync` waits while
-  instance-wide `log file parallel write` rises far less — proof that high LFS is a
-  **commit-frequency** problem, not slow disk. Move the `COMMIT` outside the loop and it collapses to ~1.
+- **`drill-commit` → `log file sync`:** 10,000 single-row `INSERT; COMMIT;` calls sent from the
+  client in one session (run.sh generates the script; override with `LFS_N=…`), the way an app that
+  commits per row behaves. Each commit is a synchronous LGWR write+post, so the session's measured
+  `log file sync` delta is ~one per commit (≈10,017 on our runs: 10,000 commits plus a few recursive
+  ones), and `run.sh` fails if it's under 90% of N. The drill then runs the *same* 10,000 commits
+  inside one PL/SQL loop: that waits **once**, because PL/SQL defers the sync to the end of the call.
+  So a PL/SQL loop doesn't reproduce the problem; per-call commits from the app do. High LFS is a
+  **commit-frequency** problem: batch the commits rather than buying faster disk.
 
 > **On timing:** on fast local NVMe the wait *time* is small — what's deterministic is the *shape*
-> (single-block vs multi-block vs direct, and ~50k commit waits), which is exactly what you learn to
+> (single-block vs multi-block vs direct, and one commit wait per client commit), which is exactly what you learn to
 > recognize. On production storage these same reads become the top timed event.
 
 ## Hidden parameters

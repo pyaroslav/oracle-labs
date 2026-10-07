@@ -73,7 +73,7 @@ order  by se.time_waited_micro desc
 fetch  first 8 rows only;
 
 prompt
-prompt --- This drill''s target event, as a BEFORE -> AFTER delta -----------------
+prompt --- This drill's target event, as a BEFORE -> AFTER delta ===
 column event format a32
 column d_waits format 999,999,990
 column d_micro format 999,999,999,990

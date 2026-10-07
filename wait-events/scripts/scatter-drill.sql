@@ -54,7 +54,7 @@ end;
 
 -- ---- proof it went through the cache (not direct path) ----------------------
 prompt
-prompt --- Proof: physical reads CACHE should rise, physical reads DIRECT should not ---
+prompt --- Proof: physical reads CACHE should rise, physical reads DIRECT should not ===
 column name  format a26
 column value format 999,999,990
 select sn.name, ms.value
@@ -85,7 +85,7 @@ order  by se.time_waited_micro desc
 fetch  first 8 rows only;
 
 prompt
-prompt --- This drill''s target event, as a BEFORE -> AFTER delta -----------------
+prompt --- This drill's target event, as a BEFORE -> AFTER delta ===
 column d_waits format 999,999,990
 column d_micro format 999,999,999,990
 select 'db file scattered read' as event,

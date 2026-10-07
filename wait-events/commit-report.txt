@@ -1,0 +1,59 @@
+
+
+
+>> Clearing the scratch table...
+
+
+
+
+
+
+>> Workload: 10000 x (single-row INSERT; COMMIT;) sent from the client, one session...
+
+
+
+
+
+
+
+============================================================
+WAIT SIGNATURE for this session (top events by time waited)
+============================================================
+
+EVENT				 WAIT_CLASS    TOTAL_WAITS TIME_WAITED_MICRO	 AVG_MS
+-------------------------------- ------------ ------------ ----------------- ----------
+log file sync			 Commit 	    10,017	   9,447,365	  0.943
+SQL*Net message to client	 Network	    40,033	      83,568	  0.002
+latch: shared pool		 Concurrency		25	      31,472	  1.259
+log file switch completion	 Configuratio		 1	      20,543	 20.543
+				 n
+
+db file sequential read 	 User I/O	       222	       1,081	  0.005
+events in waitclass Other	 Other			86		 752	  0.009
+SQL*Net break/reset to client	 Application		10		 233	  0.023
+Disk file operations I/O	 User I/O		 9		 108	  0.012
+
+--- Measured BEFORE -> AFTER delta for the 10000 client commits ===
+
+EVENT					  WAITS 	    MS	   AVG_MS
+---------------------------------- ------------ -------------- ----------
+log file sync (this sid)		 10,017        9,447.4	    0.943
+log file parallel write (instance)	 10,021        9,032.2	    0.901
+
+>> Contrast: the same 10000 x (INSERT + COMMIT) inside ONE PL/SQL block...
+
+
+
+
+
+
+
+
+LFS_SIGNAL n=10000 client_waits=10017 client_avg_ms=0.943 lfpw_writes=10021 plsql_waits=1
+
+Read it: 10,000 client-side COMMITs produced 10,017 'log file sync' waits on this session (avg 0.943 ms) --
+one synchronous LGWR round-trip per commit. Instance-wide, LGWR did 10,021 'log file parallel write' calls in the same window.
+The same 10,000 COMMITs inside one PL/SQL block waited 1 time(s): PL/SQL defers the sync to the end of the call.
+The fix for high LFS is almost always BATCHING commits (commit FREQUENCY drives
+the event, not row volume), not faster disk.
+

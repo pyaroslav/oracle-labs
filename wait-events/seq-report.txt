@@ -1,0 +1,32 @@
+
+
+
+
+
+
+>> Flushing the buffer cache so the next access must read from disk...
+>> Workload: index range scan + rowid lookups over 200k rows (single-block reads)...
+
+============================================================
+WAIT SIGNATURE for this session (top events by time waited)
+============================================================
+
+EVENT				 WAIT_CLASS    TOTAL_WAITS TIME_WAITED_MICRO	 AVG_MS
+-------------------------------- ------------ ------------ ----------------- ----------
+events in waitclass Other	 Other			36	     305,335	  8.482
+db file scattered read		 User I/O	       809	      11,274	  0.014
+db file sequential read 	 User I/O	       730	       2,693	  0.004
+Disk file operations I/O	 User I/O		 5		 115	  0.023
+SQL*Net break/reset to client	 Application		 2		  50	  0.025
+SQL*Net message to client	 Network		19		  41	  0.002
+
+--- This drill's target event, as a BEFORE -> AFTER delta ===
+
+EVENT				      D_WAITS	       D_MICRO	     D_MS
+-------------------------------- ------------ ---------------- ----------
+db file sequential read 		  730		 2,693	      2.7
+
+Read it: total_waits jumped by ~one per uncached index leaf + rowid table
+block (P3=1, single-block). On fast local disk avg_ms is tiny; on real
+storage these same single-block reads become the top User I/O event. If you
+see NO delta, the blocks were already cached -> the FLUSH is what makes it physical.
