@@ -9,7 +9,15 @@ update labuser.dl_acct set balance = balance - 1 where id = 1;
 prompt SESSION A locked id=1, holding it so B can lock id=2 and form the cycle
 begin dbms_session.sleep(6); end;
 /
-update labuser.dl_acct set balance = balance - 1 where id = 2;
-prompt SESSION A acquired id=2, A was not the deadlock victim
+set serveroutput on
+begin
+  update labuser.dl_acct set balance = balance - 1 where id = 2;
+  dbms_output.put_line('SESSION A acquired id=2, A was not the deadlock victim');
+exception when others then
+  -- the victim prints the real error, and only THIS statement is rolled back (id=... it already holds stays locked)
+  dbms_output.put_line('SESSION A was the deadlock victim -> ' || sqlerrm);
+  dbms_output.put_line('SESSION A keeps its earlier lock; only the failed UPDATE was rolled back');
+end;
+/
 commit;
 exit
