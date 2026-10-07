@@ -17,16 +17,20 @@ end;
 /
 
 prompt >> Generating a known workload (CPU-bound, one dominant SQL)...
+-- One heavy, CPU-bound statement the optimizer can't shortcut (math over a generated row set).
+-- Run 3x so it clearly tops the AWR "SQL ordered by CPU/Elapsed" sections. ~5s each, ~16s total.
+-- Keep the row count at 1M: CONNECT BY holds its rows in PGA, and on the Free image
+-- (pga_aggregate_target=512M) anything over ~2M fails with ORA-30009 after ~12s of CPU -- the drill
+-- would then "work" by accident, reporting the CPU burnt before the error.
+-- (Comments live OUTSIDE the block: the block's text, comments included, is printed in the AWR report.)
 alter session set container = FREEPDB1;
 declare
   n number;
 begin
-  -- One heavy, CPU-bound statement the optimizer can't shortcut (math over a generated row set).
-  -- Run twice so it clearly tops the AWR "SQL ordered by CPU/Elapsed" sections. ~20s total.
-  for i in 1 .. 2 loop
+  for i in 1 .. 3 loop
     select /*+ awr_demo */ sum(sqrt(level) + ln(level + 1))
     into   n
-    from   dual connect by level <= 15000000;
+    from   dual connect by level <= 1000000;
   end loop;
 end;
 /
