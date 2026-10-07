@@ -13,3 +13,9 @@ Thumbs.db
 .idea/
 .vscode/
 latency/latency-report.txt
+
+# Generated lab reports / session output
+*-report.txt
+deadlock/out*.txt
+deadlock/fout*.txt
+vector-search/vector-demo.txt
