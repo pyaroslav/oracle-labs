@@ -1,0 +1,26 @@
+# Oracle bind peeking + adaptive cursor sharing lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Same SQL, Fast for One Value, Slow for Another."
+#
+# ORDERS (200,000 rows, STATUS skewed: 1,000 OPEN / 199,000 CLOSED, with a histogram) joined to CUSTOMERS.
+# The first execution peeks 'OPEN' and gets a nested-loops plan; 'CLOSED' then reuses it and pays for 199,000
+# index probes. Adaptive cursor sharing notices and gives 'CLOSED' its own hash-join child cursor.
+# Measured with session logical reads from V$MYSTAT and the child cursor from V$SQL. Everything via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-bind-peeking-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-bind-peeking-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-bind-peeking-data:

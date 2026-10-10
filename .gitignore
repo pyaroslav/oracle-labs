@@ -19,3 +19,4 @@ latency/latency-report.txt
 deadlock/out*.txt
 deadlock/fout*.txt
 vector-search/vector-demo.txt
+bind-peeking/.peek_gets
