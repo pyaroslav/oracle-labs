@@ -20,7 +20,13 @@ select 'USED_OBJ='  ||listagg(object_name,',') within group (order by object_nam
   from dba_used_objprivs   where capture = 'APPUSER_CAP' and username = 'APPUSER' and object_owner = 'PAOWN';
 select 'UNUSED_OBJ='||listagg(object_name,',') within group (order by object_name)
   from dba_unused_objprivs where capture = 'APPUSER_CAP' and username = 'APPUSER' and object_owner = 'PAOWN';
-select 'NUSED='  ||count(*) from dba_used_privs   where capture = 'APPUSER_CAP' and username = 'APPUSER';
-select 'NUNUSED='||count(*) from dba_unused_privs where capture = 'APPUSER_CAP' and username = 'APPUSER';
+-- Count only what PA_ROLE granted (system privs + PAOWN object privs). DBA_USED_PRIVS also lists privileges that
+-- reach every user through PUBLIC (e.g. on SYS objects touched at login), which would inflate "used X of Y".
+select 'NUSED='  ||((select count(*) from dba_used_sysprivs   where capture = 'APPUSER_CAP' and username = 'APPUSER')
+                  + (select count(*) from dba_used_objprivs   where capture = 'APPUSER_CAP' and username = 'APPUSER'
+                                                                and object_owner = 'PAOWN')) from dual;
+select 'NUNUSED='||((select count(*) from dba_unused_sysprivs where capture = 'APPUSER_CAP' and username = 'APPUSER')
+                  + (select count(*) from dba_unused_objprivs where capture = 'APPUSER_CAP' and username = 'APPUSER'
+                                                                and object_owner = 'PAOWN')) from dual;
 prompt >>>ENDSIGNALS
 exit

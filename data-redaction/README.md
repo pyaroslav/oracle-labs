@@ -66,7 +66,7 @@ Or step through it:
    salary     0                        50001
 
 >> DISK: what redaction does NOT do
-   real card prefix '4111-2222-3333' in datafile (.../red_data.dbf): 162 hit(s)
+   real card prefix '4111-2222-3333' in datafile (.../red_data.dbf): 161 hit(s)
    -> the real card numbers are sitting on disk in plaintext. Redaction masked the query, not the datafile.
 
 >> PASS: redaction masks at read time per user; the stored data is intact and still on disk;
