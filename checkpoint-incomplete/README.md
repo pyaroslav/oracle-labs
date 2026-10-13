@@ -12,7 +12,7 @@ resizes the logs online and runs the identical burst again.
 
 ## What it proves
 
-The same workload (`UPDATE` of all 100,000 rows of ~1 KB, one commit, ~225 MB of redo), measured from
+The same workload (`UPDATE` of all 100,000 rows of ~1 KB, one commit, a little over 200 MB of redo), measured from
 `V$SYSTEM_EVENT`, `V$LOG_HISTORY` and the alert log:
 
 | redo layout | elapsed | log switches | `log file switch (checkpoint incomplete)` | alert log `Checkpoint not complete` |
@@ -56,7 +56,11 @@ run checks the waits, not the clock.)
   for this lab's workload.
 - **Not the same as ORA-00257.** There the logs can't be reused because the *archiver* hasn't copied them; here
   because the *checkpoint* hasn't finished. Both freeze writers; the fixes are different.
-- **Bigger logs mean longer crash recovery in theory** — more redo between checkpoints to replay. In practice
-  incremental checkpointing and `FAST_START_MTTR_TARGET` bound recovery time independently of log size.
+- **Bigger logs and crash recovery.** With `FAST_START_MTTR_TARGET` at 0 (as here), checkpoint lag is tied to the
+  smallest log, so bigger logs can mean more redo to replay after a crash. Set `FAST_START_MTTR_TARGET` when you
+  enlarge the logs, and the database paces checkpoint writes to keep recovery time bounded.
+- **The 2 x 20 MB layout comes from the container image**, which trims Oracle's redo logs to keep the image small
+  (its maintainer ships an `enlarge-redo-logs.sh` for real use). It's a convenient stand-in for any database whose
+  redo logs are small for its write rate.
 - Demo data is generic and invented. The lab runs in `NOARCHIVELOG` mode (the image default), which isolates the
   checkpoint effect from archiving.

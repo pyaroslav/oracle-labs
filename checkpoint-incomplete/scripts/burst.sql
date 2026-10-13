@@ -1,4 +1,4 @@
--- The burst: rewrite every row once (~225 MB of redo, ~100,000 dirty blocks' worth of changes) and commit.
+-- The burst: rewrite every row once (a little over 200 MB of redo) and commit.
 whenever sqlerror exit failure
 set timing on
 alter session set container=FREEPDB1;

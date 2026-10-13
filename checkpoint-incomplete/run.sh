@@ -3,7 +3,7 @@
 # need Docker. Companion to "Checkpoint Not Complete: Every Commit Waits, and the SQL Is Fine."
 #
 #   SETUP  : load CK.T (100,000 rows of ~1 KB) on the image's default redo layout: two 20 MB groups.
-#   BEFORE : rewrite every row once (~225 MB of redo). The log writer wraps around the two small groups faster than
+#   BEFORE : rewrite every row once (a little over 200 MB of redo). The log writer wraps around the two small groups faster than
 #            DBWR can finish the checkpoints that free them -> sessions wait on "log file switch (checkpoint
 #            incomplete)" and the alert log prints "Checkpoint not complete". Asserted (waits > 0, alert lines > 0).
 #   FIX    : add three 512 MB groups, switch onto them, checkpoint, drop the two small ones.
