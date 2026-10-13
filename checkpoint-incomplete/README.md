@@ -21,8 +21,9 @@ The same workload (`UPDATE` of all 100,000 rows of ~1 KB, one commit, ~225 MB of
 | 3 x 512 MB | **1.9 s** | 0 | 0 | 0 |
 
 Most of the "slow update" was the session waiting for a redo log to become reusable. The run asserts at least one
-checkpoint-incomplete wait and one alert-log line before the fix, and zero of both after. (Elapsed times vary from
-run to run — 8 to 14 s on small logs in our runs — so the run checks the waits, not the clock.)
+checkpoint-incomplete wait and one alert-log line before the fix, and zero of both after. (Elapsed times depend on
+the hardware and vary from run to run — 8 to 14 s on small logs on a desktop, about 6 s on a CI runner — so the
+run checks the waits, not the clock.)
 
 ## Run it
 

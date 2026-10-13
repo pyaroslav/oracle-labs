@@ -110,7 +110,7 @@ cmd_after() {
   burst
   [ "$DW" -eq 0 ] || die "expected no checkpoint-incomplete waits after the fix, got $DW"
   [ "$DA" -eq 0 ] || die "expected no new 'Checkpoint not complete' lines after the fix, got $DA"
-  echo "   -> no waits: each log now holds the whole burst, so the writer never catches up with the checkpoint."
+  echo "   -> no waits: each log now holds the whole burst, so the log writer never laps the checkpoint."
 }
 
 cmd_advise() { wait_healthy; run_sys < scripts/advise.sql | sed '/^$/d' | sed 's/^/   /'; }
