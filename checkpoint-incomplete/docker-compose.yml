@@ -1,0 +1,26 @@
+# Oracle "Checkpoint not complete" lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post "Checkpoint Not Complete: Every Commit Waits, and the SQL Is Fine."
+#
+# Reproduces the classic redo-sizing stall: online redo logs too small for the write rate, so the log writer wraps
+# around to a group whose checkpoint hasn't finished -> sessions wait on "log file switch (checkpoint incomplete)"
+# and the alert log says "Checkpoint not complete". Then resizes the logs (add big groups, switch, drop the small
+# ones) and runs the same burst again. Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-checkpoint-incomplete-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-checkpoint-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-checkpoint-data:
