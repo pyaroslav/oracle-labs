@@ -1,0 +1,24 @@
+# Oracle ORA-01652 lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on ORA-01652 "unable to extend temp segment".
+#
+# A query with a missing join predicate fills a small TEMP tablespace and fails with ORA-01652. Adding space only
+# moves the failure; fixing the query makes it fit. Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-temp-space-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-temp-space-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-temp-space-data:
