@@ -1,0 +1,2 @@
+alter system register;
+exit

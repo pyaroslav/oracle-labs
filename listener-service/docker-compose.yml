@@ -1,0 +1,25 @@
+# Oracle ORA-12514 lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on ORA-12514 "listener does not currently know of service requested".
+#
+# The database is up and the listener is up, yet connections fail with ORA-12514 because the service the client
+# asked for isn't registered with the listener. Four ways that happens, and the checks that tell them apart.
+# Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-listener-service-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-listener-service-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-listener-service-data:
