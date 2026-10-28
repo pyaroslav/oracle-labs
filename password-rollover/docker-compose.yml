@@ -1,0 +1,25 @@
+# Oracle password-rollover lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on ORA-01017 after a password change, and gradual password rollover.
+#
+# An application account's password is changed while app servers still hold the old one. Without rollover
+# they get ORA-01017 and lock the account; with PASSWORD_ROLLOVER_TIME both passwords work for a window.
+# Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-password-rollover-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-password-rollover-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-password-rollover-data:
