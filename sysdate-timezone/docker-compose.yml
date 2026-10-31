@@ -1,0 +1,25 @@
+# Oracle SYSDATE time-zone lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on SYSDATE being hours off after a move to a UTC cloud host.
+#
+# SYSDATE and SYSTIMESTAMP come from the operating-system clock and TZ of the server process, not from the database.
+# The lab starts the instance as the "on-prem" server (TZ America/Chicago), then restarts it as the "cloud" server
+# (TZ UTC), and shows what moves and what doesn't. Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-sysdate-timezone-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-sysdate-timezone-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-sysdate-timezone-data:
