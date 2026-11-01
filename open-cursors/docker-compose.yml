@@ -1,0 +1,25 @@
+# Oracle open-cursors lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on ORA-01000: maximum open cursors exceeded.
+#
+# An application leaks cursors (opens them, never closes them) until one session hits OPEN_CURSORS.
+# The lab finds the leaking session and statement, and shows why raising OPEN_CURSORS only buys time.
+# Deterministic; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-open-cursors-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-open-cursors-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-open-cursors-data:
