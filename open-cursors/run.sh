@@ -136,6 +136,9 @@ cmd_blame() {
 cmd_find() {
   echo ">> Two app sessions: one leaking 250 result sets, one busy and healthy with SESSION_CACHED_CURSORS 1000."
   cmd_setup
+  # warm-up: on a fresh database the busy session's statements are all brand new and fewer of them reach its
+  # cursor cache (seen once in CI-like runs); an app that has been running has its statements in the shared pool
+  { for i in $(seq 1 450); do echo "select count(*) from app.orders where id = $i;"; done; echo exit; } | app_sql >/dev/null
   { module leaky-app; calls 1 250; echo "prompt LEAK_READY"; echo "host sleep 30"; echo exit; } | app_bg leaky
   { module busy-app; echo "alter session set session_cached_cursors = 1000;"
     for r in 1 2 3 4; do for i in $(seq 1 450); do echo "select count(*) from app.orders where id = $i;"; done; done
