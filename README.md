@@ -15,6 +15,7 @@ machine with nothing but Docker. No Oracle account, no license.
 | [`wait-events/`](wait-events/) | Reproduce the half-dozen wait events that carry most real problems, and read each signature. | *Oracle Wait Events, Decoded: The Half-Dozen* |
 | [`execution-plans/`](execution-plans/) | **Watch a misestimate pick the wrong plan** — build a million-row table with a heavily skewed column, read the real `DBMS_XPLAN` plan (E-Rows vs A-Rows), and prove the optimizer over-estimates the rare value ~1000× and full-scans; then gather a histogram and prove the plan flips to an index range scan with the estimate corrected. Fails the run if the misestimate doesn't reproduce or the fix doesn't correct it. | *Oracle Execution Plans, Decoded: The One Number That Matters* |
 | [`optimizer-stats/`](optimizer-stats/) | **Watch correlated columns wreck an estimate** — build a million-row table where `model` determines `make`, and prove the optimizer multiplies selectivities and under-counts ~50× (choosing an index range scan when ~5,000 rows match); then create an extended statistic on the `(make, model)` column group and prove the estimate corrects and the plan flips to a full scan. Fails the run if the under-estimate doesn't reproduce or the column group doesn't fix it. | *Oracle Optimizer Statistics, Demystified* |
+| [`sql-plan-management/`](sql-plan-management/) | **Watch a good plan regress, then watch a baseline hold it** — a million-row `ORDERS` table with 500 `OPEN` rows and a histogram gets an index range scan; capture it as an accepted SQL plan baseline, then drop the histogram to simulate stats drift. With baselines off the same query regresses to a full scan (~14,300 buffers); with them on it keeps the index plan (~505 buffers) and `DBMS_XPLAN` reports the baseline was used. Fails the run if the regression doesn't reproduce or the baseline doesn't hold. | *Oracle SQL Plan Management: Stop a Good Plan From Going Bad* |
 | [`deadlock/`](deadlock/) | Trigger a real ORA-00060 deadlock, read the deadlock graph, then fix it with consistent lock ordering. | *ORA-00060 Deadlock: Find It, Fix It, Prevent It* |
 | [`vector-search/`](vector-search/) | Run 23ai **AI Vector Search** — a `VECTOR` column + a `VECTOR_DISTANCE` cosine similarity search — on Oracle Database Free, no OCI account. | *Your First Oracle Autonomous Database on OCI Always Free* |
 | [`rman/`](rman/) | **Break it and recover it** — delete a datafile then `RESTORE`/`RECOVER` it, repair a corrupt block with block media recovery, and rewind past a bad `DELETE` with point-in-time recovery. Fails the run if the data doesn't come back. | *Oracle RMAN Recovery Runbook: Restore, Recover, Prove It* |
@@ -53,10 +54,13 @@ self-contained, text-only forensics exercises (just bash) — run `./grade.sh` t
 
 ## Quick start
 
+You need Docker and a few GB of free memory. Every Docker lab works the same way; for example:
+
 ```bash
-cd ha    # or: cd awr
-./run.sh up        # start Oracle Database Free (first run pulls the image + creates the DB)
-./run.sh all       # run the lab end to end
+cd password-rollover
+./run.sh up        # start Oracle Database Free (the first run downloads the image and creates the DB: several minutes)
+./run.sh all       # run the lab end to end and check every result
+./run.sh down      # stop and remove the container
 ```
 
 See each lab's own `README.md` for the full guide, expected output, and troubleshooting. No local
