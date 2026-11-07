@@ -1,0 +1,35 @@
+# Oracle idle-connection-drop lab — one Oracle Database Free container (currently 26ai).
+# Companion to the post on ORA-03113 / ORA-03135 after a connection sits idle behind a firewall or load balancer.
+#
+# The database's network namespace gets a short connection-tracking timeout (90 s for an ESTABLISHED TCP flow) and,
+# from a sidecar run by run.sh, an iptables rule that drops (or resets) packets of a flow that tracking has forgotten.
+# That is what a stateful firewall, NAT or cloud load balancer does to an idle connection. Clients run in their own
+# containers on the lab network, so the "firewall" sits between them and the database.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-idle-connection-drop-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+      APP_USER: app
+      APP_USER_PASSWORD: App_Passw0rd1
+    sysctls:
+      net.netfilter.nf_conntrack_tcp_timeout_established: "90"  # the firewall's idle timeout
+      net.netfilter.nf_conntrack_tcp_loose: "0"                 # a forgotten flow stays forgotten (no mid-stream pickup)
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-idle-connection-drop-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+networks:
+  default:
+    name: ora-idle-connection-drop-net
+
+volumes:
+  ora-idle-connection-drop-data:
