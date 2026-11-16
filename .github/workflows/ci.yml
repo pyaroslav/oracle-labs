@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lab: [ha, awr, wait-events, execution-plans, optimizer-stats, sql-plan-management, deadlock, vector-search, rman, latency, hardening, unified-auditing, tde, flashback, data-redaction, partition-pruning, data-pump, vpd, privilege-analysis, indexes, bind-variables, snapshot-too-old, archiver-stuck, charset-migration, sqlnet-encryption, hwm-bloat, sequence-cutover, bind-peeking, checkpoint-incomplete, temp-space, listener-service, password-rollover, sysdate-timezone, open-cursors, idle-connection-drop, ddl-lock-busy, package-state, migration-ora-00942, invalid-number]
+        lab: [ha, awr, wait-events, execution-plans, optimizer-stats, sql-plan-management, deadlock, vector-search, rman, latency, hardening, unified-auditing, tde, flashback, data-redaction, partition-pruning, data-pump, vpd, privilege-analysis, indexes, bind-variables, snapshot-too-old, archiver-stuck, charset-migration, sqlnet-encryption, hwm-bloat, sequence-cutover, bind-peeking, checkpoint-incomplete, temp-space, listener-service, password-rollover, sysdate-timezone, open-cursors, idle-connection-drop, ddl-lock-busy, package-state, migration-ora-00942, invalid-number, debezium-cdc]
     steps:
       - uses: actions/checkout@v5
 
@@ -33,4 +33,6 @@ jobs:
 
       - name: Database log (on failure)
         if: failure()
-        run: docker logs ora-${{ matrix.lab }}-lab 2>&1 | tail -120
+        run: |
+          docker logs ora-${{ matrix.lab }}-lab 2>&1 | tail -120
+          docker logs connect-${{ matrix.lab }}-lab 2>&1 | grep -E 'ERROR|WARN|Caused by' | tail -60 || true

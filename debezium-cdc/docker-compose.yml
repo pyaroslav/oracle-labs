@@ -1,0 +1,58 @@
+# Oracle -> Kafka CDC lab: Oracle Database Free (currently 26ai), a single-node Kafka (KRaft), and Kafka Connect
+# with the Debezium Oracle connector (LogMiner). Public images only; everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-debezium-cdc-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-debezium-cdc-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: kafka-debezium-cdc-lab
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+
+  connect:
+    image: quay.io/debezium/connect:3.7.1.Final
+    container_name: connect-debezium-cdc-lab
+    depends_on: [kafka]
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: lab
+      CONFIG_STORAGE_TOPIC: lab_configs
+      OFFSET_STORAGE_TOPIC: lab_offsets
+      STATUS_STORAGE_TOPIC: lab_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+      HEAP_OPTS: "-Xms256m -Xmx1g"
+      OFFSET_FLUSH_INTERVAL_MS: "5000"
+
+volumes:
+  ora-debezium-cdc-data:
