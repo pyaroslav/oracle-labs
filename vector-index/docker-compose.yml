@@ -1,0 +1,25 @@
+# Oracle AI Vector Search index lab — one Oracle Database Free container (currently 26ai).
+# Companion to the "26ai in practice" post on HNSW vs IVF vector indexes and the vector memory pool.
+#
+# Creates APP.DOCS with deterministic synthetic FLOAT32 vectors (no embedding model, no downloads) and shows which
+# vector index needs the vector pool, what happens with the default VECTOR_MEMORY_SIZE, the settings that fix it,
+# and how approximate search compares with exact search. Everything runs via docker exec.
+services:
+  oracle:
+    image: gvenzl/oracle-free:latest
+    container_name: ora-vector-index-lab
+    environment:
+      ORACLE_PASSWORD: Lab_Passw0rd1
+    ports:
+      - "${LAB_PORT:-1521}:1521"
+    volumes:
+      - ora-vector-index-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+volumes:
+  ora-vector-index-data:
